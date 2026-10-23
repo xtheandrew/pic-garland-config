@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор программ гирлянды · XMAS.SRC</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#151c25; --panel2:#1b2430; --panel3:#10151d;
+  --line:#26313f; --line2:#334156;
+  --tx:#e7edf4; --tx2:#9fabba; --tx3s:#677484;
+  --acc:#e0574f; --acc-d:#c2423c; --acc-lite:#f0908a;
+  --grn:#3fb27f; --grn-lite:#7ed6ac;
+  --warn:#dfa23e; --err:#e0574f;
+  --c1:#ff5d5d; --c2:#ffc24d; --c3:#5ce08f; --c4:#5db8ff;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,"Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{scrollbar-color:#2c3846 var(--bg)}
+body{
+  margin:0; font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color:var(--tx); min-height:100vh; display:flex; flex-direction:column;
+  background:
+    radial-gradient(1100px 500px at 85% -100px, rgba(224,87,79,.07), transparent 60%),
+    radial-gradient(900px 420px at -10% 0, rgba(93,184,255,.05), transparent 55%),
+    var(--bg);
+}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2c3846;border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+h1,h2,h3{margin:0;font-weight:650}
+button{font:inherit;color:inherit}
+a{color:var(--acc-lite)}
+
+/* ---------- шапка ---------- */
+.top{
+  position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:22px;flex-wrap:wrap;
+  padding:10px 20px;background:rgba(11,15,20,.93);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;gap:13px;align-items:center;min-width:0}
+.mini-garland{display:flex;gap:7px;align-items:center;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.mini-garland i{width:9px;height:9px;border-radius:50%;background:var(--c);box-shadow:0 0 9px var(--c)}
+.mini-garland i:nth-child(2){animation:gp 2.4s infinite}
+.mini-garland i:nth-child(3){animation:gp 2.4s .8s infinite}
+.mini-garland i:nth-child(4){animation:gp 2.4s 1.6s infinite}
+@keyframes gp{0%,100%{opacity:.35}50%{opacity:1}}
+.brand-tx h1{font-size:15.5px;letter-spacing:.2px}
+.brand-tx p{margin:1px 0 0;font-size:11.5px;color:var(--tx2)}
+.budget{margin-left:auto;display:flex;align-items:center;gap:10px}
+.blabel{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px}
+.bbar{width:170px;height:8px;background:var(--panel3);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+#budgetFill{height:100%;width:0%;background:linear-gradient(90deg,#2f9d6c,var(--grn-lite));transition:width .25s}
+.budget.warn #budgetFill{background:linear-gradient(90deg,#b97f26,var(--warn))}
+.budget.err #budgetFill{background:linear-gradient(90deg,#a13a34,var(--err))}
+.btext{font-family:var(--mono);font-size:12px;color:var(--tx2);min-width:104px}
+.budget.err .btext{color:var(--err);font-weight:700}
+.topbtns{display:flex;gap:8px}
+
+/* ---------- кнопки ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;height:32px;padding:0 13px;
+  border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--tx);
+  font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,transform .05s;white-space:nowrap;
+}
+.btn:hover{background:#243040;border-color:#40526a}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(180deg,#e25952,#c2423c);border-color:#99332f;font-weight:600}
+.btn.primary:hover{background:linear-gradient(180deg,#ea655e,#cc4741)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.dashed{border-style:dashed;border-color:var(--line2);background:transparent;color:var(--tx2);width:100%}
+.btn.dashed:hover{color:var(--tx);border-color:#40526a;background:#18202b}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.ibtn{
+  display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:6px;border:1px solid transparent;background:transparent;color:var(--tx2);cursor:pointer;
+  transition:background .12s,color .12s;flex:none;
+}
+.ibtn:hover{background:#26313f;color:var(--tx)}
+.ibtn.danger:hover{background:#3a2222;color:var(--err)}
+.ibtn:disabled{opacity:.28;cursor:not-allowed}
+.ibtn:disabled:hover{background:transparent;color:var(--tx2)}
+.ic{display:inline-flex;width:14px;height:14px;flex:none}
+.ic svg{width:100%;height:100%;fill:currentColor}
+
+/* ---------- каркас ---------- */
+main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;padding:18px;max-width:1460px;margin:0 auto;width:100%;flex:1;align-items:start}
+.side{display:flex;flex-direction:column;gap:10px;position:sticky;top:66px}
+.side-head{display:flex;align-items:baseline;gap:8px;padding:0 2px}
+.side-head h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2)}
+.cnt{font-size:12px;color:var(--tx3s)}
+#progList{display:flex;flex-direction:column;gap:7px;max-height:52vh;overflow-y:auto;padding:2px}
+.editcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+
+/* ---------- карточки программ ---------- */
+.pcard{
+  display:flex;gap:10px;align-items:center;padding:8px 9px;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel);cursor:pointer;transition:border-color .12s,background .12s;
+}
+.pcard:hover{border-color:#3a4960}
+.pcard.sel{border-color:var(--acc);background:linear-gradient(180deg,#231a1b,#1a171a)}
+.pc-num{
+  font-weight:700;font-size:11.5px;color:var(--tx2);background:var(--panel3);
+  border:1px solid var(--line);border-radius:6px;padding:2px 6px;flex:none;font-family:var(--mono);
+}
+.pcard.sel .pc-num{color:#fff;background:var(--acc);border-color:var(--acc-d)}
+.pc-main{min-width:0;flex:1}
+.pc-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-name.empty{color:var(--tx3s);font-style:italic}
+.pc-meta{font-size:11px;color:var(--tx3s);margin-top:1px}
+.pc-btns{display:flex;gap:2px}
+.pcard.playing .pc-num{border-color:var(--grn);color:var(--grn-lite)}
+
+/* ---------- предпросмотр ---------- */
+.preview{position:sticky;top:66px;z-index:20;padding:13px 16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.pv-lamps{display:flex;gap:18px}
+.lamp{display:flex;flex-direction:column;align-items:center;gap:3px;user-select:none}
+.lamp .bulb{
+  width:52px;height:52px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.28) 0 10%, var(--c) 48%, rgba(0,0,0,.55) 130%);
+  border:1px solid rgba(0,0,0,.6);transition:box-shadow .08s linear;
+}
+.lamp .soc{width:14px;height:9px;background:linear-gradient(180deg,#4a5561,#2c343d);border-radius:0 0 4px 4px;margin-top:-1px}
+.lamp .cap{font-size:10.5px;color:var(--tx2);letter-spacing:.4px}
+.pv-ctrl{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-left:auto}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--tx2)}
+select,input[type=text]{
+  background:var(--panel3);border:1px solid var(--line);color:var(--tx);border-radius:7px;
+  padding:6px 8px;font:inherit;font-size:13px;min-width:0;
+}
+select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
+.chk{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--tx2);cursor:pointer;padding-bottom:6px}
+.chk input{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
+.pv-stat{flex-basis:100%;font-size:12.5px;color:var(--tx2);font-family:var(--mono);min-height:19px;padding-top:6px;border-top:1px dashed var(--line)}
+.pv-stat b{color:var(--tx);font-weight:600}
+
+/* ---------- заголовок программы ---------- */
+.ph{padding:11px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.ph-num{font-weight:700;font-size:13px;color:var(--acc-lite);white-space:nowrap}
+.ph input[type=text]{flex:1;min-width:220px}
+.ph-meta{font-size:12px;color:var(--tx3s);white-space:nowrap}
+.ph .del{margin-left:auto}
+.ph-empty{padding:26px 20px;text-align:center;color:var(--tx2);font-size:13.5px}
+
+/* ---------- шаги ---------- */
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.step.play{border-color:var(--grn);box-shadow:0 0 0 1px var(--grn) inset}
+.st-h{display:flex;align-items:center;gap:10px;padding:7px 10px 7px 14px;background:var(--panel2);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.st-n{font-weight:700;font-size:12px;color:var(--tx2);font-family:var(--mono)}
+.step.play .st-n{color:var(--grn-lite)}
+.st-bytes{font-family:var(--mono);font-size:12px;color:var(--acc-lite);background:var(--panel3);border:1px solid var(--line);border-radius:5px;padding:1px 7px}
+.st-warn{font-size:11.5px;color:var(--warn)}
+.st-btns{margin-left:auto;display:flex;gap:2px}
+.st-b{display:flex;flex-direction:column;gap:11px;padding:12px 14px}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.row.tight{gap:10px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{background:transparent;border:0;color:var(--tx2);padding:6px 13px;cursor:pointer;font-size:12.5px}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button.on{background:var(--acc);color:#fff;font-weight:600}
+.seg button:not(.on):hover{background:#232e3b;color:var(--tx)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--panel3)}
+.stepper button{width:26px;height:28px;border:0;background:transparent;color:var(--tx2);cursor:pointer;font-size:15px;line-height:1}
+.stepper button:hover{background:#26313f;color:var(--tx)}
+.stepper b{min-width:36px;text-align:center;font-family:var(--mono);font-size:13px}
+.frames{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.fr{
+  display:inline-flex;align-items:center;gap:3.5px;padding:4px 6px;border:1px solid var(--line);
+  border-radius:6px;background:var(--panel3);transition:border-color .1s,background .1s;
+}
+.fr.cur{border-color:var(--grn);background:#14231c}
+.fr i{width:7px;height:7px;border-radius:50%;background:#273240}
+.fr i.on{background:var(--c);box-shadow:0 0 5px var(--c)}
+.fr em{font-style:normal;font-size:9px;color:var(--warn);border:1px solid rgba(223,162,62,.5);border-radius:4px;padding:0 3px;margin-left:3px;line-height:1.35}
+.frlbl{font-size:11px;color:var(--tx3s);margin-right:3px}
+.hint{font-size:11.5px;color:var(--tx3s)}
+.dirpats{display:flex;gap:10px;align-items:flex-end}
+.lamptog{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;cursor:pointer;padding:0}
+.lamptog i{
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);
+  background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.06) 0 12%, #232d3a 55%, rgba(0,0,0,.5) 130%);
+  transition:background .12s,border-color .12s,box-shadow .12s;
+}
+.lamptog.on i{
+  border-color:var(--c);
+  background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.5) 0 12%, var(--c) 55%, rgba(0,0,0,.45) 130%);
+  box-shadow:0 0 14px -2px var(--c);
+}
+.lamptog span{font-size:10px;color:var(--tx2)}
+.revhint{font-size:11px;color:var(--tx3s);max-width:210px}
+
+/* ---------- справка / футер ---------- */
+.help{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden}
+.help summary{cursor:pointer;padding:10px 14px;font-size:12.5px;color:var(--tx2);user-select:none;list-style:none;display:flex;align-items:center;gap:8px}
+.help summary::-webkit-details-marker{display:none}
+.help summary::before{content:"›";display:inline-block;transition:transform .15s;font-size:15px;color:var(--acc-lite)}
+.help[open] summary::before{transform:rotate(90deg)}
+.help-b{padding:2px 16px 14px;font-size:12.8px;color:var(--tx2);display:flex;flex-direction:column;gap:9px;border-top:1px solid var(--line)}
+.help-b h3{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--tx);margin-top:6px}
+.help-b p{margin:0}
+.help-b pre{background:var(--panel3);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:11.8px;line-height:1.55;overflow-x:auto;margin:0;color:var(--tx)}
+.help-b code{font-family:var(--mono);background:var(--panel3);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11.5px}
+.help-b ul{margin:0;padding-left:18px}
+.foot{
+  display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between;padding:10px 20px;
+  border-top:1px solid var(--line);font-size:11.5px;color:var(--tx3s);
+}
+@media (max-width:1020px){
+  main{grid-template-columns:1fr}
+  .side{position:static}
+  #progList{max-height:none}
+  .preview{position:static}
+  .budget{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="mini-garland" aria-hidden="true"><i style="--c:var(--c1)"></i><i style="--c:var(--c2)"></i><i style="--c:var(--c3)"></i><i style="--c:var(--c4)"></i></div>
+    <div class="brand-tx">
+      <h1>Редактор программ гирлянды</h1>
+      <p>XMAS.SRC · контроллер бегущих огней · 4 канала · до 16 программ</p>
+    </div>
+  </div>
+  <div class="budget" id="budgetBox">
+    <span class="blabel">Таблица программ</span>
+    <div class="bbar"><div id="budgetFill"></div></div>
+    <span class="btext" id="budgetText">— / 250</span>
+  </div>
+  <div class="topbtns">
+    <button id="btnImport" class="btn" title="Загрузить файл .src (например, ранее скачанный из этого редактора)"><span class="ic" data-ic="imp"></span>Импорт</button>
+    <button id="btnReset" class="btn ghost" title="Вернуть исходные 5 программ из XMAS.SRC"><span class="ic" data-ic="rst"></span>Сбросить</button>
+    <button id="btnDownload" class="btn primary" title="Скачать полный код прошивки с вашими программами"><span class="ic" data-ic="dl"></span>Скачать XMAS.SRC</button>
+  </div>
+</header>
+
+<main>
+  <aside class="side">
+    <div class="side-head"><h2>Программы</h2><span class="cnt" id="progCount"></span></div>
+    <div id="progList"></div>
+    <button id="btnAddProg" class="btn dashed"><span class="ic" data-ic="plus"></span>Добавить программу</button>
+
+    <details class="help">
+      <summary>Справка: как это работает</summary>
+      <div class="help-b">
+        <h3>Программа</h3>
+        <p>Программа — последовательность шагов, которая исполняется контроллером по кругу, пока не нажата кнопка. Всего слотов — 16 (№&nbsp;0–15); свободные слоты в конце заполняются «пустышками» (байт <code>255</code>). Номер программы выбирается кнопками 1/2 на устройстве и отображается в двоичном виде на каналах, кнопка 3 меняет общую скорость, кнопка 4 запускает демо-перебор всех программ.</p>
+        <h3>Шаг</h3>
+        <p>Каждый шаг — либо <b>палитра</b> (готовая последовательность кадров из таблицы <code>Pattern</code>, проигрываемая заданное число раз), либо <b>непосредственное состояние каналов</b> (4 выключателя). Флажок «реверс» проигрывает палитру задом наперёд; в режиме прямого управления он включается автоматически — так требует формат прошивки.</p>
+        <h3>Скорость и яркость</h3>
+        <p>«Скорость шага» — длительность одного кадра; она пересчитывается для трёх общих скоростей устройства (медленно / нормально / быстро). «Разгорание» и «затухание» — плавность включения и выключения каналов внутри шага: плавно по таблице, вдвое быстрее, вчетверо быстрее или мгновенно.</p>
+        <h3>Формат элемента (2 байта на шаг)</h3>
+        <pre>байт 1:  R R R R  P P P P      R - повторы палитры (0-15)
+                            P - код палитры (0-15)
+байт 2:  V X X X  U U  D D    V - реверс (задом наперёд)
+                            X - скорость шага (0-7)
+                            U - разгорание (00/01/10/11)
+                            D - затухание  (00/01/10/11)</pre>
+        <p>Если R&nbsp;=&nbsp;0, младшие биты байта&nbsp;1 задают состояние каналов напрямую (бит&nbsp;0 — канал&nbsp;1), и обязан быть выставлен реверс. Значение <code>255</code> — конец программы.</p>
+        <h3>Ограничения</h3>
+        <ul>
+          <li>не более 16 программ;</li>
+          <li>вся таблица программ — не более 250 байт (каждый шаг занимает 2 байта, каждая программа — ещё 1 байт терминатора);</li>
+          <li>кадры палитры с пометкой «3к» пропускаются в трёхканальном режиме устройства (включается удержанием кнопки 4 и кнопки 3 при подаче питания).</li>
+        </ul>
+        <p>Кнопка «Скачать» собирает полный файл прошивки: меняется только таблица программ после метки <code>Program</code>, весь остальной код остаётся ровно тем же, что в исходном XMAS.SRC.</p>
+      </div>
+    </details>
+  </aside>
+
+  <section class="editcol">
+    <div class="panel preview">
+      <div class="pv-lamps" id="lamps"></div>
+      <div class="pv-ctrl">
+        <button id="btnPlay" class="btn primary" title="Проиграть выбранную программу (как на устройстве)"><span class="ic" data-ic="play"></span>Играть</button>
+        <label class="fld">Скорость устройства
+          <select id="selGSpeed" title="Общая скорость, как от кнопки 3 на устройстве">
+            <option value="0">Медленно</option>
+            <option value="16" selected>Нормально</option>
+            <option value="32">Быстро</option>
+          </select>
+        </label>
+        <label class="chk" title="Пропускать кадры палитр, помеченные для трёхканального режима"><input type="checkbox" id="chkThree"><span>3 канала</span></label>
+        <label class="chk" title="Как кнопка 4 на устройстве: перебирать все программы по кругу"><input type="checkbox" id="chkDemo"><span>Демо-перебор</span></label>
+      </div>
+      <div class="pv-stat" id="pvStat">Нажмите «Играть», чтобы посмотреть выбранную программу в действии</div>
+    </div>
+    <div id="progHead" class="panel"></div>
+    <div id="stepsList" class="steps"></div>
+    <button id="btnAddStep" class="btn dashed"><span class="ic" data-ic="plus"></span>Добавить шаг</button>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Устройство: кнопки 1/2 — выбор программы, 3 — общая скорость, 4 — демо-перебор. Прошивка: (c) Vladislav Baliasov, 1998.</span>
+  <span id="saveHint">Изменения автосохраняются в этом браузере</span>
+</footer>
+
+<input type="file" id="fileImport" accept=".src,.asm,.txt" hidden>
+<script type="text/plain" id="orig-src">; Переключатель елочных гирлянд на основе PIC16F628A.
+; Адаптировано под точные определения фьюзов из 16f628a.inc в кодировке UTF-8.
+
+; Поддерживает четыре канала управления (используется фазовое управление
+; мощными тиристорами с дублирование на контрольные светодиоды).
+
+; Режим программирования - при включении питания удержать нажатой кнопку 4,
+; и, одновременно, кнопки, определяющие установку спецрежимов:
+; 1 - режим "резкого" включения/выключения, без плавной регулировки;
+; 2 - резерв;
+; 3 - режим управления тремя каналами, четвертый канал в некоторых режимах
+; не использовать (типа "бегущих огней").
+
+; При работе устройства кнопки 1 и 2 выбирают номер программы (номер программы
+; отображается на индикаторах в двоичном коде), кнопка 3 переключает
+; скорость работы ("быстро", "медленно", "нормально"), кнопка 4 включает
+; последовательный перебор всех программ (отмена этого режима - нажатие кнопок
+; 1 или 2).
+
+; (c) by Vladislav Baliasov, 1998
+; Модификация под PIC16F628A, 2026.
+
+; Тактовая частота - 4.000 MHz.
+
+           include 'c:\pictools\16f628a.inc'
+           ; Используем точные имена констант из вашего .inc файла:
+           fuses   _INTOSC_OSC_NOCLKOUT
+           fuses   _WDT_OFF
+           fuses   _PWRTE_ON
+           fuses   _CP_OFF
+           fuses   _LVP_OFF
+
+; Порты ввода-вывода.
+; ra.0 - резерв (выход);
+; ra.1 - резерв (выход);
+; ra.2 - резерв (выход);
+; ra.3 - резерв (выход);
+; ra.4 - вход синхронизации (1-импульс перед началом полупериода сети);
+; rb.0 - управление каналом 1 (0-активный);
+; rb.1 - управление каналом 2 (0-активный);
+; rb.2 - управление каналом 3 (0-активный);
+; rb.3 - управление каналом 4 (0-активный);
+; rb.4 - кнопка 1 (0-активный);
+; rb.5 - кнопка 2 (0-активный);
+; rb.6 - кнопка 3 (0-активный);
+; rb.7 - кнопка 4 (0-активный);
+
+; У PIC16F628A пользовательское ОЗУ начинается с адреса 32 (0x20)
+           org     32
+
+W_save     ds      1           ; сохрание W при прерывании
+S_save     ds      1           ; сохранение status при прерывании
+PCH_save   ds      1           ; сохранение PCLath при прерывании
+count      ds      1           ; счетчик
+temp       ds      1           ; временная переменная
+
+Flags      ds      1           ; разные флажки
+
+_Reverse   equ     Flags.0     ; режим реверса диаграммы
+_Four      equ     Flags.1     ; режим четырех каналов (если 0, то три канала)
+_NoPatt    equ     Flags.2     ; для этого шага не использовать "палитру"
+_NoPWM     equ     Flags.3     ; не использовать регулировку яркости
+_Demo      equ     Flags.4     ; режим перебора программ
+
+; Переменные, используемые интерпретатором программу управления
+
+MainSpeed  ds      1           ; выбор скорости
+ProgNum    ds      1           ; номер первого шага программы
+Step       ds      1           ; номер шага программы
+PattNum    ds      1           ; смещение до начала "палитры" в таблице
+Repeat     ds      1           ; счетчик повторения "палитры"
+PattStep   ds      1           ; номер шага при выполнении "палитры"
+StepTime   ds      1           ; время выполнения одного шага "палитры"
+SpeedUp    ds      1           ; скорость нарастания яркости
+SpeedDown  ds      1           ; скорость спада яркости
+
+Timer      ds      1           ; счетчик полупериодов (дискреты по 10 mS)
+Phase      ds      1           ; счетчик фазы полупериода (F0>E0>D0...10>00)
+
+; Переменные, определяющие яркость каналов
+
+Ch1        ds      1           ; уровень яркости канала 1
+Ch2        ds      1           ; уровень яркости канала 2
+Ch3        ds      1           ; уровень яркости канала 3
+Ch4        ds      1           ; уровень яркости канала 4
+
+; Копии переменных, используются в обработчике прерываний
+
+Ch1_       ds      1           ; уровень яркости канала 1
+Ch2_       ds      1           ; уровень яркости канала 2
+Ch3_       ds      1           ; уровень яркости канала 3
+Ch4_       ds      1           ; уровень яркости канала 4
+
+Synch      equ     ra.4        ; синхронизация
+SCR1       equ     rb.0        ; тиристор 1
+SCR2       equ     rb.1        ; тиристор 2
+SCR3       equ     rb.2        ; тиристор 3
+SCR4       equ     rb.3        ; тиристор 4
+Key1       equ     rb.4        ; кнопка 1
+Key2       equ     rb.5        ; кнопка 2
+Key3       equ     rb.6        ; кнопка 3
+Key4       equ     rb.7        ; кнопка 4
+
+           org     0
+           mov     !ra,#00010000b      ; все, кроме ra.4, на вывод
+           clr     ra
+           jmp     Init        ; инициализация при включении
+
+           org     4
+
+; Обработка прерываний от таймера.
+
+           mov     W_save,w    ; сохраняем W
+           mov     S_save,status
+           mov     PCH_save,PCLath
+Reload
+           sub     Phase,#10h  ; уменьшаем счетчик фазы
+           mov     w,<>Phase
+           and     w,#0Fh      ; индекс в таблице dT
+           call    Time
+           mov     TMR0,w      ; новое значение таймера
+
+; Фазовое управление тиристорами каналов. При необходимости можно добавить
+; еще несколько каналов (сейчас только 4).
+
+           jb      _NoPWM,On   ; режим On/OFF
+CheckChn
+           csb     Ch1_,Phase  ; канал 1
+           clrb    SCR1
+           csb     Ch2_,Phase  ; канал 2
+           clrb    SCR2
+           csb     Ch3_,Phase  ; канал 3
+           clrb    SCR3
+           csb     Ch4_,Phase  ; канал 4
+           clrb    SCR4
+           jmp     CheckPhase
+
+; Управление в режиме включить/выключить, выполняется один раз в начале
+; каждого полупериода в режиме _NoPWM. Теоретически это должно уменьшить
+; уровень ЭМ-помех от устройства.
+
+On
+           cjne    Phase,#0F0h,CheckPhase ; если не в начале полупериода
+           snb     Ch1_.7
+           clrb    SCR1        ; включить, если Ch1_ > 70h
+           snb     Ch2_.7
+           clrb    SCR2        ; включить, если Ch2_ > 70h
+           snb     Ch3_.7
+           clrb    SCR3        ; включить, если Ch4_ > 70h
+           snb     Ch4_.7
+           clrb    SCR4        ; включить, если Ch4_ > 70h
+
+; Процесс включения тиристоров закончен. Контроль окончания полупериода...
+
+CheckPhase
+           cja     Phase,#0Fh,IntExit ; полупериод еще не кончился
+
+; Обработка окончания полупериода. Вероятно, здесь же надо обрабатывать
+; нажатие управляющих клавиш.
+
+           jnb     Synch,$     ; ждем положительного фронта сигнала Synch
+           clr     w
+           clr     Phase       ; начальное состояние
+           mov     rb,#0Fh     ; снимаем сигнал управления с тиристоров
+           dec     Timer       ; уменьшаем счетчик полупериодов
+           mov     Ch1_,Ch1    ; копирование
+           mov     Ch2_,Ch2    ; канальных
+           mov     Ch3_,Ch3    ; переменных
+           mov     Ch4_,Ch4
+           jmp     Reload      ; начинаем обработку периода
+IntExit
+           clrb    t0if        ; снимем флаг прерывания
+           mov     PCLath,PCH_save
+           mov     status,S_save
+           swap    W_save
+           mov     W,<>W_save
+           reti
+
+; Таблица значений для загрузки таймера
+
+Time
+           clr     PCLath
+           jmp     pc+w
+           retw    0,242,240,236,229,222,215,207,197,185,171,153,132,108,81,41
+
+; Таблица скоростей выполнения. состоит из трех 16-байтных сегментов,
+; для скоростей "медленно", "нормально", "быстро".
+; В зависимости от кода скорости 0...7 программы выбирается счетчик 10-mS тактов
+; для выполнения одного шага "палитры". Вторая часть сегмента содержит
+; коды скоростей нарастания/убывания яркости при включении/выключении каналов.
+
+GetSpeed
+           clr     PCLath
+           jmp     pc+w
+
+; "Медленно"
+
+           retw    255,255,160,128,90,64,32,16 ; скорость выполнения
+           retw    1,1,1,1,2,2,4,8            ; поведение яркости
+
+; "Нормально"
+
+           retw    255,160,128,90,64,32,16,8  ; скорость выполнения
+           retw    1,1,1,2,2,4,8,16           ; поведение яркости
+
+; "Быстро"
+           retw    160,128,90,64,32,16,8,8    ; скорость выполнения
+           retw    1,1,2,2,4,8,16,16          ; поведение яркости
+
+; Таблицы "палитр". Каждая "палитра" начинается с счетчика байтов в "палитре",
+; включая сам счетчик. Байты-элементы "палитры" содержат код состояния
+; каналов (1-включен, 0-выключен, бит 0 соответствует каналу 1). Включенный
+; бит 7 указывает, что элемент пропускается в 3-канальном режиме.
+
+; !!! Необходимо строго контролировать соответствие счетчика и фактического
+; содержания "палитры", а также не допускать переход таблицы за границу
+; 256-словного сегмента !
+
+Pattern
+           clr     PCLath
+           jmp     pc+w
+
+           retw    5           ; #0 - бегущий "0"
+           retw    00001110b
+           retw    00001101b
+           retw    00001011b
+           retw    10000111b
+
+           retw    5           ; #1 - бегущая "1"
+           retw    00000001b
+           retw    00000010b
+           retw    00000100b
+           retw    10001000b
+
+           retw    5           ; #2 - бегущая "11"
+           retw    00001001b
+           retw    00000011b
+           retw    00000110b
+           retw    00001100b
+
+           retw    7           ; #3 - бегущая "111"
+           retw    00000000b
+           retw    00000001b
+           retw    00000011b
+           retw    00000111b
+           retw    00001110b
+           retw    00001100b
+
+           retw    9           ; #4 - бегущая "1111"
+           retw    00000000b
+           retw    00000001b
+           retw    00000011b
+           retw    00000111b
+           retw    10001111b
+           retw    00001110b
+           retw    00001100b
+           retw    10001000b
+
+           retw    3           ; #5 - "крест"
+           retw    00000101b
+           retw    00001010b
+
+           retw    12          ; #6 - "пирамида"
+           retw    00000000b
+           retw    00000001b
+           retw    00000010b
+           retw    00000100b
+           retw    10001000b
+           retw    10001001b
+           retw    10001010b
+           retw    10001100b
+           retw    00001101b
+           retw    00001110b
+           retw    00001111b
+
+           retw    17          ; #7 - "шаг вперед и два назад"
+           retw    00001000b
+           retw    00000001b
+           retw    00001000b
+           retw    00000001b
+           retw    00000010b
+           retw    00000001b
+           retw    00000010b
+           retw    00000001b
+           retw    00000010b
+           retw    00000100b
+           retw    00000010b
+           retw    00000100b
+           retw    00001000b
+           retw    00000100b
+           retw    00001000b
+           retw    00000100b
+
+           retw    6           ; #8 - "уголок 1"
+           retw    00000000b
+           retw    00000001b
+           retw    00000011b
+           retw    00000111b
+           retw    10001111b
+
+           retw    6           ; #9 - "уголок 2"
+           retw    00000000b
+           retw    10001000b
+           retw    00001100b
+           retw    00001110b
+           retw    00001111b
+
+           retw    7           ; #A - бегущая "101"
+           retw    00000001b
+           retw    00000010b
+           retw    00000101b
+           retw    00001010b
+           retw    00000100b
+           retw    10001000b
+
+           retw    2,0,2,0,2,0,2,0,2,0 ; резерв (#A...#F)
+
+;----------------------------------------------------------------------
+
+;----------------------------------------------------------------------
+; Основная программа, инициализация.
+;----------------------------------------------------------------------
+
+Init
+           ; Отключаем аналоговые компараторы на PORTA у PIC16F628A
+           mov     01Fh,#7     ; CMCON = 7
+
+           mov     rb,#255
+           mov     !rb,#11110000b      ; младшие на вывод (управление)
+           mov     !option,#00000010b  ; включаем pull-up резисторы
+           mov     MainSpeed,#16       ; "нормальная скорость"
+           clr     Flags
+           setb    _Four
+           mov     fsr,#Ch1
+Init1
+           clr     indf
+           inc     fsr
+           cjbe    fsr,#Ch4_,Init1
+
+; Программирование режимов при включении. Если в момент включения питания
+; нажата кнопка Key4, состояние остальных кнопок будет определять
+; некоторые специальные режимы устройства:
+; Key1 - режим "резкого" включения/выключения ламп, без использования PWM
+; (это сделано для уменьшения возможных ЭM-помех от устройства);
+; Key2 - резерв;
+; Key3 - режим трех каналов (используется для правильного формирования
+; диаграммы для трех гирлянд в режиме "бегущие огни").
+
+           jb      Key4,Init2          ; программирование не требуется
+           sb      Key1
+           setb    _NoPWM
+           sb      Key3
+           clrb    _Four
+           clr     temp                ; используем temp для передачи адреса 0
+           mov     w,Flags
+           call    EEWrite             ; сохраняем
+Init2
+           clr     temp
+           call    EERead
+           mov     Flags,w             ; восстанавливаем флажки из EEPROM
+           jnb     Key4,$              ; ждем отпускания Key4
+           mov     intcon,#10100000b   ; разрешаем прерывания от таймера
+           clr     ProgNum
+
+; Инициализация устройства закончена. Основной цикл выполнения программы.
+
+Main
+           mov     w,ProgNum   ; номер программы
+           call    Execute     ; выполняем программу
+           cjb     rb,#0F0h,MainKey ; нажата клавиша
+           snb     _Demo
+           inc     ProgNum     ; автоинкремент номера программы
+           clrb    ProgNum.4   ; номр в диапазоне 0...15
+           jmp     Main
+
+; Выполнение прекращено по нажатию клавиши. Клавиши Key1 и Key2 сейчас
+; просто переключают номер программы (предыдыщая/следующая по порядку).
+; Номер выбранной программы индицируется на индикаторах в двоичном коде.
+
+MainKey
+           mov     temp,ProgNum ; копия для индикации
+           jb      Key3,Main1  ; скорость
+           add     MainSpeed,#16 ; увеличиваем на шаг
+           csbe    MainSpeed,#32
+           clr     MainSpeed   ; 0>16>32
+           mov     w,<>MainSpeed ; для индикации
+           mov     temp,w        ; скорости
+           jmp     Main3
+Main1
+           jb      Key4,Main2
+           setb    _Demo       ; демонстрационный режим
+           jmp     Main3
+Main2
+           clrb    _Demo       ; выключим демонстрационный режим
+           sb      Key1
+           dec     ProgNum     ; шаг назад
+           sb      Key2
+           inc     ProgNum     ; шаг вперед
+           and     ProgNum,#0Fh ; только младшие биты
+           mov     temp,ProgNum ; копия для индикации
+Main3
+           mov     fsr,#Ch4
+Main4
+           clr     indf
+           mov     w,#0A0h     ; подсветка (но не полная яркость)
+           snb     temp.0
+           mov     indf,w      ; включение канала для 1-бита
+           rr      temp        ; следующий бит
+           dec     fsr         ; следующая канальная переменная
+           cjae    fsr,#Ch1,Main4 ; для четырех битов
+MainKey2
+           cjb     rb,#0F0h,MainKey2; ждем отпускания клавиши
+           mov     timer,#10        ; таймаут на 100 mS
+MainKey3
+           cjb     rb,#0F0h,MainKey2 ; подавление дребезга
+           test    Timer
+           jnz     MainKey3
+           jmp     Main
+
+; Выполнение программы, номер которой задается в регистре W.
+; Вначале найдем заказанную программу...
+
+Execute
+           mov     temp,w      ; сохраним номер
+           clr     Step        ; номер первого шага программы
+Execute1
+           test    temp        ; нужную программу нашли ?
+           jz      Run         ; да - начинаем выполнение программы
+           mov     w,Step
+           call    Program     ; очередной байт программы
+           add     w,#1
+           jnz     Execute2    ; продолжение программы
+           dec     temp        ; иначе уменьшим счетчик
+           skip                ; пропустим только один байт !
+Execute2
+           inc     Step
+           inc     Step
+           jmp     Execute1
+
+; Интерпретатор программы управления каналами.
+
+Run
+
+; Установка очередной палитры.
+
+           clrb    _NoPatt
+           mov     w,Step      ; номер очередного шага программы
+           call    Program     ; выборка кода "палитры" и счетчика
+           mov     PattStep,w  ; сохраним код "палитры"
+           mov     Repeat,w    ; счетчик повторения
+           add     w,#1        ; проверим на завершение
+           snc
+           ret                 ; программа закончена
+           swap    Repeat      ; счетчик повторения в младших битах
+           mov     w,#0Fh      ; маска
+           and     PattStep,w  ; оставим только номер "палитры"
+           and     Repeat,w    ; и правильное значение счетчика
+           snz
+           setb    _NoPatt     ; не использовать "палитру"
+           clr     PattNum     ; обнулим счетчик индекс таблицы "палитр"
+           jb      _NoPatt,SetSpeed ; "палитра" не используется
+
+; В переменной PattStep сейчас находится номер "палитры". Теперь надо
+; пересчитать этот номер в смещение до первого элемента, и поместить его
+; в PattNum.
+
+SetPatt
+           test    PattStep    ; добрались до нужного элемента ?
+           jz      SetPatt1    ; да
+           mov     w,PattNum
+           call    Pattern     ; длина очередной "палитры"
+           add     PattNum,w   ; корректируем указатель
+           dec     PattStep    ; уменьшаем счетчик
+           jmp     SetPatt     ; продолжаем сканирование таблицы
+SetPatt1
+           mov     w,PattNum
+           call    Pattern     ; получим счетчик длины
+           add     w,#-2       ; номер последнего элемента
+           mov     PattStep,w  ; сохраним
+
+; Начало "палитры" найдено. Теперь необходимо настроить переменные,
+; определяющие скорость выполнения "палитры".
+
+SetSpeed
+           mov     w,++Step
+           call    Program     ; байт программы, определяющий скорость
+           mov     temp,w      ; сохраним его
+           sb      temp.7      ; "реверс" ?
+           clr     PattStep    ; не - иначе начнем с нуля
+           mov     w,<>temp
+           and     w,#7
+           add     w,#8        ; скорость изменения яркости
+           add     w,MainSpeed
+           call    GetSpeed
+           mov     SpeedUp,w   ; сохраним
+           mov     SpeedDown,w ; значения
+           mov     w,<>temp
+           and     w,#7
+           add     w,MainSpeed
+           call    GetSpeed    ; скорость выполнения
+           mov     StepTime,w  ; сохраним ее
+           clrb    _Reverse
+           snb     temp.7
+           setb    _Reverse    ; признак выполнения "задом наперед"
+
+; Настройка скорости спада яркости
+
+           clc
+           mov     w,temp
+           and     w,#3        ; код времени спада
+           sz
+           rl      SpeedDown   ; удвоим скорость
+           snb     temp.1
+           rl      SpeedDown   ; еще удвоим
+           xor     w,#3
+           mov     w,#0F0h     ; код для режима ON/OFF
+           snz
+           mov     SpeedDown,w ; если требуется "резкое" выключение
+
+; Настройка скорости нарастания яркости
+
+           clc
+           mov     w,temp
+           and     w,#0Ch      ; код времени нарастания
+           sz
+           rl      SpeedUp     ; удвоим скорость
+           snb     temp.3
+           rl      SpeedUp     ; еще удвоим
+           xor     w,#0Ch
+           mov     w,#0F0h     ; код для режима ON/OFF
+           snz
+           mov     SpeedUp,w   ; если требуется "резкое" включение
+
+; Выполнение очередного шага "палитры".
+
+MakeStep
+           mov     Timer,StepTime ; длительность выполнения шага
+MakeStep1
+           mov     w,PattStep  ; если код задан непосредственно
+           jb      _NoPatt,MakeStep2
+           mov     w,++PattNum ; первый элемент палитры
+           add     w,PattStep  ; текущий элемент
+           call    Pattern     ; значение элемента
+MakeStep2
+           mov     temp,w      ; сохраним значение
+           jb      _Four,MakeStep3 ; если используются четыре канала
+           jb      temp.7,NextStep ; шаг пропускается для 3 каналов
+MakeStep3
+           csae    rb,#0F0h
+           ret                 ; если нажата любая кнопка
+
+; Обработка канальных переменных по содержимому temp. Младшие биты
+; определяют изменение яркости каналов, 1 соответствует включению
+; канала, а 0 - выключению.
+
+           mov     fsr,#Ch1    ; указатель на первый канал
+Bright
+           jb      temp.0,Up   ; увеличения яркости
+           sub     indf,SpeedDown
+           mov     w,#00h      ; минимум
+           sc
+           mov     indf,w      ; чтобы не выйти за пределы
+           jmp     NextChn
+Up
+           add     indf,SpeedUp
+           mov     w,#0F0h     ; максимум
+           snc
+           mov     indf,w      ; чтобы не выйти за пределы
+NextChn
+           rr      temp        ; сдвиг
+           inc     fsr         ; следующий канал
+           cjbe    fsr,#Ch4,Bright ; повторяем для всех каналов
+           mov     temp,Timer  ; состояние таймера
+Wait
+           cje     temp,Timer,Wait ; ждем следующего периода
+           test    Timer       ; шаг закончился ?
+           jnz     MakeStep1   ; нет
+
+; Следующий шаг в "палитре"
+
+           jb      _NoPatt,MakeStep4 ; "палитра" не используется
+NextStep
+           mov     w,PattNum   ; начало "палитры"
+           call    Pattern     ; счетчик длины
+           mov     temp,w      ; сохраним его
+           dec     temp        ; счетчик шагов
+           sb      _Reverse    ; проверим направление
+           inc     PattStep    ; шаг вперед
+           snb     _Reverse
+           dec     PattStep    ; иначе назад
+           cjb     PattStep,temp,MakeStep ; выполнение очередного шага
+           djnz    Repeat,SetPatt1        ; повторение "палитры"
+MakeStep4
+           inc     Step
+           inc     Step        ; следующий элемент программы
+           jmp     Run
+
+; --- Новая логика чтения/записи EEPROM для PIC16F628A под CVASM16 ---
+
+eeread
+           setb    rp0         ; переключим страницу регистров (Банк 1)
+           mov     EEADR, temp  ; Записываем адрес из temp в EEADR (09Fh)
+           setb    rd          ; инициируем чтение (EECON1.0)
+           mov     w, EEDATA     ; Считываем значение из EEDATA (09Eh) в W
+           clrb    rp0         ; восстановим Банк 0
+           ret
+
+eewrite
+           setb    rp0         ; переключим страницу регистров (Банк 1)
+           mov     EEDATA, w     ; Записываем значение из W в EEDATA (09Eh)
+           mov     EEADR, temp  ; Записываем адрес из temp в EEADR (09Fh)
+           setb    wren        ; разрешаем запись в NVRAM
+           mov     eecon2,#055h
+           mov     eecon2,#0AAh
+           setb    wr          ; запускаем процесс записи
+eewrite1
+           jnb     eeif,$      ; ждем окончания процесса
+           clrb    eeif        ; сбросим флажок
+           clrb    wren        ; запрещаем запись
+           clrb    rp0         ; восстановим Банк 0
+           ret
+
+
+           org     768
+
+; Таблица управляющих программ. Общая длина таблицы не должна превышать 250
+; байтов.
+
+; Каждая программа состоит из произвольного числа двухбайтовых
+; элементов, и оканчивается байтом со значением 0FFh. Структура элемента:
+; xxxx xxxx   xxxx xxxx
+;       Скорость убывания яркости при выключении
+;
+;                Скорость нарастания яркости при включении
+;
+;              Скорость выполнения
+;
+;            Признак реверса (выполнение "задом наперед")
+;
+;         Код "палитры"
+;
+;     Коэффициент повторения
+
+; Коэффициент повторения - число в диапазоне 0...15, если указано 0,
+; то состояние каналов берется не из "палитры", а непосредственно
+; из младших битов этого байта. При этом обязательно должен быть
+; также выставлен флажок "реверс" !
+
+; Скорость выполнения - таблично заданная, зависит от заказанной скорости
+; работы устройства (может быть сделаю в будущем)
+
+; Скорость нарастания/убывания - при указании 00 скорость выбирается
+; из таблицы (в зависимости от скорости выполнения). При указании
+; 11 - включение/выключение происходит немедленно. Для кода 01 и кода 10
+; скорость будет вдвое и вчетверо больше заданной в таблице (соответственно).
+
+Program
+           setb    PCLath.1
+           setb    PCLath.0
+           jmp     pc+w        ; выборка из таблицы
+
+; Просто разные комбинации бегущих огней...
+
+           retw    031h,045h
+           retw    012h,045h
+           retw    01Ah,045h
+           retw    014h,041h
+           retw    021h,045h
+           retw    012h,045h
+           retw    013h,041h
+           retw    045h,055h
+           retw    023h,0C1h
+           retw    023h,041h
+           retw    042h,045h
+           retw    042h,0C5h
+           retw    045h,055h
+           retw    255
+
+
+; HT-2040 Group-3 (1)
+
+           retw    022h,045h
+           retw    042h,055h
+           retw    082h,065h
+           retw    0F2h,075h
+           retw    082h,065h
+           retw    042h,055h
+           retw    022h,045h
+           retw    255
+
+; HT-2040 Group-4 (2)
+
+           retw    042h,055h
+           retw    082h,065h
+           retw    082h,0E5h
+           retw    0F2h,075h
+           retw    0F2h,0F5h
+           retw    082h,0E5h
+           retw    042h,0D5h
+           retw    255
+
+; HT-2040 Group-6 (3)
+
+           retw    040h,055h
+           retw    080h,065h
+           retw    0F0h,075h
+           retw    255
+
+; HT-2040 Group-7 (4)
+
+           retw    040h,055h
+           retw    080h,065h
+           retw    0F0h,075h
+           retw    0F0h,0F5h
+           retw    080h,0E5h
+           retw    040h,0D5h
+
+; Пустышки - чтобы не было проблем при выборке несуществующей программы
+
+           retw    255,255,255,255,255,255,255,255,255,255,255,255,255,255
+
+
+           end</script>
+<script>
+(function () {
+"use strict";
+/* ============================================================
+   ЯДРО: разбор исходника, кодирование шагов, генерация таблицы
+   Формат таблицы Program (см. комментарий в XMAS.SRC):
+     программа = N двухбайтовых элементов + байт 255 (терминатор)
+     байт 1: [повторы 0-15][код палитры 0-15]
+             повторы=0 -> младшие биты = прямая маска каналов (нужен реверс)
+     байт 2: [реверс][скорость 0-7][разгорание 00-11][затухание 00-11]
+   ============================================================ */
+
+var $ = function (s) { return document.querySelector(s); };
+var CH_COLORS = ['#ff5d5d', '#ffc24d', '#5ce08f', '#5db8ff'];
+var CH_NAMES = ['Канал 1', 'Канал 2', 'Канал 3', 'Канал 4'];
+var MAX_TABLE = 250;          // предел из комментария в исходнике
+var MAX_PROGS = 16;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function fmtDur(ms) {
+  var s = ms / 1000;
+  return (s >= 10 ? s.toFixed(1) : s.toFixed(2)) + ' с';
+}
+function plural(n, one, few, many) {
+  var a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 10 || b >= 20)) return few;
+  return many;
+}
+function hexA(hex, a) {
+  var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+
+/* ---------- иконки (inline SVG) ---------- */
+var IC = {
+  play: '<svg viewBox="0 0 16 16"><path d="M4.5 2.5l9 5.5-9 5.5z"/></svg>',
+  stop: '<svg viewBox="0 0 16 16"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>',
+  up: '<svg viewBox="0 0 16 16"><path d="M8 3.5L13 10H3z"/></svg>',
+  down: '<svg viewBox="0 0 16 16"><path d="M8 12.5L3 6h10z"/></svg>',
+  del: '<svg viewBox="0 0 16 16"><path d="M2.5 4h11M6 4V2.5h4V4M4.5 4l.9 9.5h5.2L11.5 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
+  copy: '<svg viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1.3" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3H3.3A1.3 1.3 0 0 0 2 4.3v7.2" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+  plus: '<svg viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>',
+  dl: '<svg viewBox="0 0 16 16"><path d="M8 2v8.2M8 10.2L4.8 7M8 10.2L11.2 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 13.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  imp: '<svg viewBox="0 0 16 16"><path d="M8 10.5V2M8 2L4.8 5.2M8 2l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 13.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  rst: '<svg viewBox="0 0 16 16"><path d="M13.2 8A5.2 5.2 0 1 1 11 3.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M11.4 1.6v2.6H8.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+
+/* ---------- числа в синтаксисе spasm ---------- */
+function parseNum(tok) {
+  tok = String(tok).trim();
+  if (/^[01]+[bB]$/.test(tok)) return parseInt(tok.slice(0, -1), 2);
+  if (/^[0-9a-fA-F]+[hH]$/.test(tok)) return parseInt(tok.slice(0, -1), 16);
+  if (/^\d+$/.test(tok)) return parseInt(tok, 10);
+  return NaN;
+}
+function hexB(b) {
+  return '0' + (b & 0xFF).toString(16).toUpperCase().padStart(2, '0') + 'h';
+}
+
+/* ---------- разбор текста исходника ---------- */
+function splitSrc(text) {
+  var eol = text.indexOf('\r\n') >= 0 ? '\r\n' : '\n';
+  return { eol: eol, lines: text.split(eol) };
+}
+function findLabel(lines, name) {
+  var re = new RegExp('^\\s*' + name + '\\s*(;.*)?$');
+  for (var i = 0; i < lines.length; i++) if (re.test(lines[i])) return i;
+  return -1;
+}
+function findJmpAfter(lines, from) {
+  for (var i = from; i < Math.min(from + 8, lines.length); i++) {
+    if (/^\s*jmp\s+pc\+w/i.test(lines[i])) return i;
+  }
+  return -1;
+}
+/* Сбор байтов из retw-строк. endIdx==null -> до первой строки-кода не retw.
+   Возвращает {bytes, nameAt, trailAt, stopIdx}; nameAt[i] - комментарий НАД retw-строкой
+   байта i, trailAt[i] - комментарий в хвосте той же строки. */
+function collectRetw(lines, from, endIdx) {
+  var bytes = [], nameAt = [], trailAt = [], pending = null;
+  var lim = (endIdx == null) ? lines.length : endIdx;
+  for (var i = from; i < lim; i++) {
+    var t = lines[i].trim();
+    if (!t) continue;
+    if (t.charAt(0) === ';') { pending = t.replace(/^;\s*/, ''); continue; }
+    var m = /^retw\s+([^;]*)(?:;([\s\S]*))?$/i.exec(t);
+    if (!m) {
+      if (endIdx == null) return { bytes: bytes, nameAt: nameAt, trailAt: trailAt, stopIdx: i };
+      throw new Error('неожиданная строка внутри таблицы программ: «' + t.slice(0, 60) + '»');
+    }
+    var toks = m[1].split(',');
+    var trail = m[2] ? m[2].trim() : null;
+    for (var k = 0; k < toks.length; k++) {
+      var v = parseNum(toks[k]);
+      if (isNaN(v) || v < 0 || v > 255) throw new Error('непонятное значение «' + toks[k].trim() + '» в retw');
+      nameAt.push(pending); trailAt.push(trail); bytes.push(v);
+    }
+    pending = null;
+  }
+  return { bytes: bytes, nameAt: nameAt, trailAt: trailAt, stopIdx: lim };
+}
+
+/* ---------- шаг программы: кодирование/декодирование ---------- */
+function decodeStep(b1, b2) {
+  var rep = (b1 >> 4) & 0x0F, low = b1 & 0x0F;
+  var st = {
+    mode: rep === 0 ? 'dir' : 'pal',
+    pal: low, repeat: rep === 0 ? 1 : rep, pattern: low,
+    reverse: !!(b2 & 0x80),
+    speed: (b2 >> 4) & 7, up: (b2 >> 2) & 3, down: b2 & 3
+  };
+  if (st.mode === 'dir' && !st.reverse) st.dirNoRev = true; // прошивка игнорирует маску без реверса
+  return st;
+}
+function encodeStep(st) {
+  var b1, b2;
+  b2 = (st.speed & 7) << 4 | (st.up & 3) << 2 | (st.down & 3);
+  if (st.mode === 'dir') {
+    b1 = st.pattern & 0x0F;
+    b2 |= 0x80; /* реверс обязателен в режиме прямого управления */
+  } else {
+    b1 = ((st.repeat & 0x0F) << 4) | (st.pal & 0x0F);
+    if (st.reverse) b2 |= 0x80;
+  }
+  return [b1, b2];
+}
+function normalizeStep(o) {
+  o = o || {};
+  var mode = o.mode === 'dir' ? 'dir' : 'pal';
+  return {
+    mode: mode,
+    pal: clamp(o.pal | 0, 0, 15),
+    repeat: clamp((o.repeat | 0) || 1, 1, 15),
+    pattern: clamp(o.pattern | 0, 0, 15),
+    reverse: !!o.reverse,
+    speed: clamp(o.speed | 0, 0, 7),
+    up: clamp(o.up | 0, 0, 3),
+    down: clamp(o.down | 0, 0, 3)
+  };
+}
+function defaultStep() {
+  return { mode: 'pal', pal: 1, repeat: 3, pattern: 1, reverse: false, speed: 4, up: 1, down: 1 };
+}
+
+/* ---------- байты -> программы ---------- */
+function splitPrograms(bytes, nameAt) {
+  var out = [], cur = [], name = null, i = 0;
+  while (i < bytes.length) {
+    if (bytes[i] === 255) {
+      out.push({ name: name || '', steps: cur });
+      cur = []; name = null; i++;
+    } else {
+      if (i + 1 >= bytes.length) throw new Error('таблица программ повреждена: нечётное число байтов данных');
+      if (cur.length === 0) name = nameAt[i] || '';
+      cur.push(decodeStep(bytes[i], bytes[i + 1]));
+      i += 2;
+    }
+  }
+  if (cur.length) out.push({ name: name || '', steps: cur }); /* нет завершающего 255 - принимаем как есть */
+  return out;
+}
+
+/* ---------- палитры и скорости ---------- */
+function palNameFrom(trail, above) {
+  var sources = [trail, above];
+  for (var i = 0; i < sources.length; i++) {
+    var s = sources[i] || '';
+    var m = s.match(/#\s?([0-9A-Fa-f])\s*[-\u2013\u2014]\s*([\s\S]+)/);
+    if (m) return m[2].trim();
+    if (/\u0440\u0435\u0437\u0435\u0440\u0432/i.test(s)) return 'резерв';
+  }
+  return null;
+}
+function parsePalettes(lines) {
+  var li = findLabel(lines, 'Pattern');
+  if (li < 0) return null;
+  var jmp = findJmpAfter(lines, li + 1);
+  if (jmp < 0) return null;
+  var r = collectRetw(lines, jmp + 1, null);
+  var pals = [], p = 0;
+  while (p < r.bytes.length && pals.length < MAX_PROGS) {
+    var cnt = r.bytes[p];
+    if (cnt < 2 || p + cnt > r.bytes.length) break;
+    var name = palNameFrom(r.trailAt[p], r.nameAt[p]);
+    pals.push({ name: name, frames: r.bytes.slice(p + 1, p + cnt) });
+    p += cnt;
+  }
+  while (pals.length < MAX_PROGS) pals.push({ name: 'резерв', frames: [0] });
+  return pals;
+}
+function parseSpeeds(lines) {
+  var li = findLabel(lines, 'GetSpeed');
+  if (li < 0) return null;
+  var jmp = findJmpAfter(lines, li + 1);
+  if (jmp < 0) return null;
+  var b = collectRetw(lines, jmp + 1, null).bytes;
+  if (b.length < 48) return null;
+  return {
+    0: { exec: b.slice(0, 8), bright: b.slice(8, 16) },
+    16: { exec: b.slice(16, 24), bright: b.slice(24, 32) },
+    32: { exec: b.slice(32, 40), bright: b.slice(40, 48) }
+  };
+}
+
+/* ---------- поиск региона таблицы программ ---------- */
+function locateRegion(lines) {
+  var li = findLabel(lines, 'Program');
+  if (li < 0) throw new Error('не найдена метка Program');
+  var jmpIdx = findJmpAfter(lines, li + 1);
+  if (jmpIdx < 0) throw new Error('после метки Program нет jmp pc+w');
+  var endIdx = -1;
+  for (var i = jmpIdx + 1; i < lines.length; i++) {
+    if (/^\s*end\s*$/i.test(lines[i])) { endIdx = i; break; }
+  }
+  if (endIdx < 0) throw new Error('не найдена директива end');
+  return { li: li, jmpIdx: jmpIdx, endIdx: endIdx };
+}
+
+/* ---------- полный разбор исходника ---------- */
+function fullParse(text) {
+  var sp = splitSrc(text);
+  var reg = locateRegion(sp.lines);
+  var pr = collectRetw(sp.lines, reg.jmpIdx + 1, reg.endIdx);
+  var progs = splitPrograms(pr.bytes, pr.nameAt);
+  if (progs.length > MAX_PROGS) progs = progs.slice(0, MAX_PROGS);
+  while (progs.length && progs[progs.length - 1].steps.length === 0) progs.pop();
+  var model = new Array(MAX_PROGS).fill(null);
+  for (var i = 0; i < progs.length; i++) {
+    model[i] = { name: String(progs[i].name || ''), steps: progs[i].steps.map(normalizeStep) };
+  }
+  var palettes = parsePalettes(sp.lines), speeds = parseSpeeds(sp.lines);
+  return { slots: model, palettes: palettes, speeds: speeds, region: reg };
+}
+
+/* ---------- объём таблицы ---------- */
+function bytesOf(slots) {
+  var per = slots.map(function (s) { return s ? 2 * s.steps.length + 1 : 1; });
+  var total = per.reduce(function (a, b) { return a + b; }, 0);
+  return { per: per, total: total };
+}
+
+/* ---------- генерация текста таблицы ---------- */
+function generateTableText(slots, eol) {
+  var IND = '           retw    ';
+  var out = [];
+  var last = -1;
+  slots.forEach(function (s, i) { if (s) last = i; });
+  for (var i = 0; i <= last; i++) {
+    var s = slots[i];
+    var nm = (s && s.name && s.name.trim());
+    out.push('; ' + (nm || ('\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430 ' + i)) +
+      ((s && s.steps.length) ? '' : ' - \u043f\u0443\u0441\u0442\u0430\u044f'));
+    out.push('');
+    if (s) {
+      for (var k = 0; k < s.steps.length; k++) {
+        var bb = encodeStep(s.steps[k]);
+        out.push(IND + hexB(bb[0]) + ',' + hexB(bb[1]));
+      }
+    }
+    out.push(IND + '255');
+    out.push('');
+  }
+  var pad = MAX_PROGS - (last + 1);
+  if (pad > 0) {
+    out.push('; \u041f\u0443\u0441\u0442\u044b\u0448\u043a\u0438 - \u0447\u0442\u043e\u0431\u044b \u043d\u0435 \u0431\u044b\u043b\u043e \u043f\u0440\u043e\u0431\u043b\u0435\u043c \u043f\u0440\u0438 \u0432\u044b\u0431\u043e\u0440\u043a\u0435 \u043d\u0435\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044e\u0449\u0435\u0439 \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u044b');
+    out.push('');
+    for (var p = 0; p < pad; p += 14) {
+      var chunk = [];
+      for (var q = p; q < Math.min(p + 14, pad); q++) chunk.push('255');
+      out.push(IND + chunk.join(','));
+    }
+  }
+  while (out.length && out[out.length - 1] === '') out.pop();
+  return out.join(eol);
+}
+
+/* ---------- сборка полного исходника ---------- */
+function buildSource(baseText, slots) {
+  var sp = splitSrc(baseText);
+  var reg = locateRegion(sp.lines);
+  var table = generateTableText(slots, sp.eol);
+  return sp.lines.slice(0, reg.jmpIdx + 1).join(sp.eol) +
+    sp.eol + sp.eol + table + sp.eol + sp.eol +
+    sp.lines.slice(reg.endIdx).join(sp.eol);
+}
+
+
+/* ============================================================
+   СОСТОЯНИЕ И ИНТЕРФЕЙС
+   ============================================================ */
+
+var ORIGINAL = document.getElementById('orig-src').textContent.replace(/^\r?\n/, '');
+var ORIGINAL_LINES = splitSrc(ORIGINAL).lines;
+var LS_KEY = 'xmas-editor-v1';
+var baseSource = ORIGINAL, baseName = 'XMAS.SRC';
+var parsedRef = { palettes: null, speeds: null };
+var state = { slots: new Array(MAX_PROGS).fill(null), selected: 0 };
+
+function pals() {
+  if (!parsedRef.palettes) parsedRef.palettes = parsePalettes(ORIGINAL_LINES);
+  return parsedRef.palettes;
+}
+function spds() {
+  if (!parsedRef.speeds) parsedRef.speeds = parseSpeeds(ORIGINAL_LINES);
+  return parsedRef.speeds;
+}
+function lastOccupied() {
+  var l = -1;
+  for (var i = 0; i < MAX_PROGS; i++) if (state.slots[i]) l = i;
+  return l;
+}
+function ensureSelection() {
+  var l = lastOccupied();
+  if (l < 0) { state.selected = -1; return; }
+  if (state.selected < 0 || state.selected > l || !state.slots[state.selected]) state.selected = l;
+}
+function curProg() {
+  return (state.selected >= 0 && state.selected < MAX_PROGS) ? state.slots[state.selected] : null;
+}
+
+/* ---------- загрузка / сброс ---------- */
+function boot() {
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { saved = null; }
+  if (saved && Array.isArray(saved.slots) && saved.slots.length === MAX_PROGS &&
+      typeof saved.baseSource === 'string' && saved.baseSource) {
+    try {
+      var res = fullParse(saved.baseSource);
+      baseSource = saved.baseSource;
+      baseName = saved.baseName || 'XMAS.SRC';
+      parsedRef.palettes = res.palettes; parsedRef.speeds = res.speeds;
+      state.slots = saved.slots.map(function (s) {
+        return (s && Array.isArray(s.steps)) ? { name: String(s.name || ''), steps: s.steps.map(normalizeStep) } : null;
+      });
+    } catch (e) { resetToOriginal(false); }
+    if (typeof saved.selected === 'number') state.selected = saved.selected;
+  } else {
+    resetToOriginal(false);
+  }
+  ensureSelection();
+}
+function resetToOriginal(ask) {
+  if (ask !== false && !confirm('Вернуть исходные 5 программ из XMAS.SRC? Текущие изменения будут потеряны.')) return false;
+  var res = fullParse(ORIGINAL);
+  baseSource = ORIGINAL; baseName = 'XMAS.SRC';
+  parsedRef.palettes = res.palettes; parsedRef.speeds = res.speeds;
+  state.slots = res.slots; state.selected = 0;
+  ensureSelection();
+  if (player.playing) stopPlay();
+  return true;
+}
+function persist() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ v: 1, slots: state.slots, selected: state.selected, baseSource: baseSource, baseName: baseName }));
+  } catch (e) {
+    var h = $('#saveHint');
+    if (h) h.textContent = 'Автосохранение недоступно в этом режиме браузера';
+  }
+}
+
+/* ---------- рендер ---------- */
+function renderAll() { renderBudget(); renderProgramList(); renderEditor(); persist(); }
+
+function renderBudget() {
+  var b = bytesOf(state.slots);
+  var box = $('#budgetBox');
+  box.classList.toggle('warn', b.total > 210 && b.total <= MAX_TABLE);
+  box.classList.toggle('err', b.total > MAX_TABLE);
+  $('#budgetFill').style.width = clamp(b.total / MAX_TABLE * 100, 0, 100) + '%';
+  $('#budgetText').textContent = b.total + ' / ' + MAX_TABLE + ' байт';
+  var n = lastOccupied() + 1;
+  $('#progCount').textContent = n + ' из ' + MAX_PROGS;
+  $('#btnAddProg').disabled = (n >= MAX_PROGS) || (b.total + 2 > MAX_TABLE);
+  $('#btnAddStep').disabled = !curProg() || (b.total + 2 > MAX_TABLE);
+  var dl = $('#btnDownload');
+  dl.disabled = b.total > MAX_TABLE;
+  dl.title = b.total > MAX_TABLE
+    ? 'Таблица программ больше ' + MAX_TABLE + ' байт - удалите лишние шаги'
+    : 'Скачать полный код прошивки с вашими программами';
+  dl.innerHTML = '<span class="ic">' + IC.dl + '</span>Скачать ' + esc(baseName || 'XMAS.SRC');
+}
+
+function renderProgramList() {
+  var l = lastOccupied(), html = '';
+  for (var i = 0; i <= l; i++) {
+    var s = state.slots[i];
+    var n = s ? s.steps.length : 0;
+    var nm = (s && s.name && s.name.trim()) ? s.name : (n ? ('Программа ' + i) : 'пустая - ничего не делает');
+    html += '<div class="pcard' + (i === state.selected ? ' sel' : '') + '" data-i="' + i + '" title="' + esc(nm) + '">' +
+      '<span class="pc-num">#' + i + '</span>' +
+      '<div class="pc-main">' +
+      '<div class="pc-name' + (n ? '' : ' empty') + '">' + esc(nm) + '</div>' +
+      '<div class="pc-meta">' + n + ' шаг' + plural(n, '', 'а', 'ов') + ' · ' + (2 * n + 1) + ' байт</div>' +
+      '</div><div class="pc-btns">' +
+      '<button class="ibtn" data-a="pup" title="Переместить выше">' + IC.up + '</button>' +
+      '<button class="ibtn" data-a="pdown" title="Переместить ниже">' + IC.down + '</button>' +
+      '<button class="ibtn" data-a="pcopy" title="Дублировать">' + IC.copy + '</button>' +
+      '<button class="ibtn danger" data-a="pdel" title="Удалить программу">' + IC.del + '</button>' +
+      '</div></div>';
+  }
+  if (l < 0) html = '<div class="ph-empty" style="padding:14px 8px;font-size:12.5px">Программ нет - добавьте первую.</div>';
+  var pl = $('#progList');
+  var sc = pl.scrollTop;
+  pl.innerHTML = html;
+  pl.scrollTop = sc;
+  markPlayingCard();
+}
+
+function renderEditor() {
+  var head = $('#progHead'), list = $('#stepsList');
+  var s = curProg();
+  if (!s) {
+    head.innerHTML = '<div class="ph-empty">Нет программ. Нажмите «Добавить программу» в списке слева.</div>';
+    list.innerHTML = '';
+    $('#btnAddStep').style.display = 'none';
+    return;
+  }
+  $('#btnAddStep').style.display = '';
+  var n = s.steps.length;
+  head.innerHTML =
+    '<span class="ph-num">Программа #' + state.selected + '</span>' +
+    '<input type="text" id="progName" maxlength="80" placeholder="Название (попадёт в комментарий в исходнике)" value="' + esc(s.name) + '">' +
+    '<span class="ph-meta">' + n + ' шаг' + plural(n, '', 'а', 'ов') + ' · ' + (2 * n + 1) + ' байт</span>' +
+    '<button class="ibtn danger" data-a="pdelcur" title="Удалить эту программу">' + IC.del + '</button>';
+  list.innerHTML = n
+    ? s.steps.map(function (st, i) { return stepCard(st, i, n); }).join('')
+    : '<div class="ph-empty">В программе нет шагов: при выборе на устройстве она ничего не делает. Добавьте шаг ниже.</div>';
+}
+
+/* ---------- карточка шага ---------- */
+function palLabel(i) {
+  var p = pals()[i];
+  var nm = p.name || 'без названия';
+  return '#' + i.toString(16).toUpperCase() + ' · ' + nm + ' · ' + p.frames.length + ' кадр' + plural(p.frames.length, '', 'а', 'ов');
+}
+function paletteOptions(cur) {
+  return pals().map(function (p, i) {
+    return '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + esc(palLabel(i)) + '</option>';
+  }).join('');
+}
+function frameTitle(v) {
+  var on = [];
+  for (var ch = 0; ch < 4; ch++) if (v & (1 << ch)) on.push('канал ' + (ch + 1));
+  return (on.length ? 'Включены: ' + on.join(', ') : 'Все выключены') + ' (код ' + (v & 15) + ')' +
+    (v & 0x80 ? ' · пропускается в 3-кан. режиме' : '');
+}
+function frameChip(v, k) {
+  var skip = !!(v & 0x80), dots = '';
+  for (var ch = 0; ch < 4; ch++) {
+    dots += '<i class="' + (v & (1 << ch) ? 'on' : '') + '" style="--c:' + CH_COLORS[ch] + '"></i>';
+  }
+  return '<span class="fr" data-k="' + k + '" title="' + esc(frameTitle(v)) + '">' + dots + (skip ? '<em>3к</em>' : '') + '</span>';
+}
+function framesStrip(st) {
+  var fr = pals()[st.pal].frames;
+  var seq = st.reverse ? fr.slice().reverse() : fr;
+  return '<div class="row tight"><span class="frlbl">Кадры палитры (' + seq.length + ')' +
+    (st.reverse ? ' · порядок реверса' : '') + ':</span><div class="frames">' +
+    seq.map(function (v, k) { return frameChip(v, k); }).join('') + '</div></div>';
+}
+function speedOptions(cur) {
+  var s = spds(), out = '';
+  for (var c = 0; c < 8; c++) {
+    out += '<option value="' + c + '"' + (c === cur ? ' selected' : '') + '>' + c + ' · ' + fmtDur(s[16].exec[c] * 10) + '</option>';
+  }
+  return out;
+}
+function speedHint(c) {
+  var s = spds();
+  return 'длительность кадра: ' + fmtDur(s[0].exec[c] * 10) + ' / ' + fmtDur(s[16].exec[c] * 10) + ' / ' + fmtDur(s[32].exec[c] * 10) + ' (медл./норм./быстр.)';
+}
+function rampOptions(cur, speedCode) {
+  var base = spds()[16].bright[speedCode] || 1;
+  var items = [
+    [0, 'Плавно \u2248' + fmtDur(Math.ceil(240 / base) * 10)],
+    [1, 'Быстрее \u00d72 \u2248' + fmtDur(Math.ceil(240 / (base * 2)) * 10)],
+    [2, 'Быстро \u00d74 \u2248' + fmtDur(Math.ceil(240 / (base * 4)) * 10)],
+    [3, 'Мгновенно']
+  ];
+  return items.map(function (it) {
+    return '<option value="' + it[0] + '"' + (it[0] === cur ? ' selected' : '') + '>' + it[1] + '</option>';
+  }).join('');
+}
+function stepCard(st, i, n) {
+  var bb = encodeStep(st);
+  var bytesStr = hexB(bb[0]) + ',' + hexB(bb[1]);
+  var srcHtml, revHtml = '';
+  if (st.mode === 'pal') {
+    srcHtml =
+      '<label class="fld">Палитра<select data-a="pal" data-i="' + i + '">' + paletteOptions(st.pal) + '</select></label>' +
+      '<div class="fld">Повторы палитры<div class="stepper">' +
+      '<button data-a="rep-" data-i="' + i + '"' + (st.repeat <= 1 ? ' disabled' : '') + ' title="Меньше">\u2212</button>' +
+      '<b>' + st.repeat + '</b>' +
+      '<button data-a="rep+" data-i="' + i + '"' + (st.repeat >= 15 ? ' disabled' : '') + ' title="Больше">+</button>' +
+      '</div></div>';
+    revHtml = '<label class="chk" title="Проигрывать палитру в обратном порядке">' +
+      '<input type="checkbox" data-a="rev" data-i="' + i + '"' + (st.reverse ? ' checked' : '') + '><span>Реверс (задом наперёд)</span></label>';
+  } else {
+    var togs = '';
+    for (var ch = 0; ch < 4; ch++) {
+      var on = !!(st.pattern & (1 << ch));
+      togs += '<button class="lamptog' + (on ? ' on' : '') + '" style="--c:' + CH_COLORS[ch] + '" data-a="ch" data-i="' + i + '" data-ch="' + ch + '"' +
+        ' title="' + CH_NAMES[ch] + ': ' + (on ? 'включён' : 'выключен') + '"><i></i><span>К' + (ch + 1) + '</span></button>';
+    }
+    srcHtml = '<div class="fld">Состояние каналов<div class="dirpats">' + togs + '</div></div>' +
+      '<span class="revhint">Реверс в этом режиме обязателен и включается автоматически</span>';
+  }
+  var framesHtml = st.mode === 'pal' ? framesStrip(st) : '';
+  return '<div class="step" data-step="' + i + '">' +
+    '<div class="st-h"><span class="st-n">Шаг ' + (i + 1) + '</span>' +
+    '<span class="st-bytes" title="Байты этого шага в таблице Program">' + bytesStr + '</span>' +
+    (st.dirNoRev ? '<span class="st-warn" title="В исходном файле у этого шага не установлен реверс - прошивка игнорирует маску каналов">без реверса - маска игнорируется</span>' : '') +
+    '<span class="st-btns">' +
+    '<button class="ibtn" data-a="sup" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Переместить выше">' + IC.up + '</button>' +
+    '<button class="ibtn" data-a="sdown" data-i="' + i + '"' + (i === n - 1 ? ' disabled' : '') + ' title="Переместить ниже">' + IC.down + '</button>' +
+    '<button class="ibtn danger" data-a="sdel" data-i="' + i + '" title="Удалить шаг">' + IC.del + '</button>' +
+    '</span></div>' +
+    '<div class="st-b">' +
+    '<div class="row"><div class="fld">Источник каналов<div class="seg">' +
+    '<button data-a="mode" data-v="pal" data-i="' + i + '" class="' + (st.mode === 'pal' ? 'on' : '') + '">Палитра</button>' +
+    '<button data-a="mode" data-v="dir" data-i="' + i + '" class="' + (st.mode === 'dir' ? 'on' : '') + '">Каналы напрямую</button>' +
+    '</div></div>' + srcHtml + revHtml + '</div>' +
+    framesHtml +
+    '<div class="row">' +
+    '<label class="fld">Скорость шага<select data-a="speed" data-i="' + i + '">' + speedOptions(st.speed) + '</select></label>' +
+    '<label class="fld">Разгорание<select data-a="up" data-i="' + i + '">' + rampOptions(st.up, st.speed) + '</select></label>' +
+    '<label class="fld">Затухание<select data-a="down" data-i="' + i + '">' + rampOptions(st.down, st.speed) + '</select></label>' +
+    '<span class="hint">' + speedHint(st.speed) + '</span>' +
+    '</div></div></div>';
+}
+
+/* ---------- операции ---------- */
+function moveProgram(i, d) {
+  var j = i + d;
+  if (i < 0 || j < 0 || j >= MAX_PROGS || !state.slots[i]) return;
+  var t = state.slots[i]; state.slots[i] = state.slots[j]; state.slots[j] = t;
+  state.selected = state.slots[i] ? i : j;
+  renderAll();
+}
+function delProgram(i) {
+  if (i < 0 || !state.slots[i]) return;
+  var nm = state.slots[i].name || ('Программа ' + i);
+  if (!confirm('Удалить «' + nm + '»? Остальные программы сдвинутся вверх.')) return;
+  state.slots.splice(i, 1);
+  state.slots.push(null);
+  if (player.playing && player.prog === i) stopPlay();
+  else if (player.playing && player.prog > i) player.prog--;
+  if (state.selected > i) state.selected--;
+  ensureSelection();
+  renderAll();
+}
+function copyProgram(i) {
+  var src = state.slots[i];
+  if (!src) return;
+  var l = lastOccupied();
+  if (l >= MAX_PROGS - 1) { alert('Нет свободного слота: уже ' + MAX_PROGS + ' программ.'); return; }
+  if (bytesOf(state.slots).total + 2 * src.steps.length > MAX_TABLE) {
+    alert('Не хватает места в таблице (лимит ' + MAX_TABLE + ' байт).'); return;
+  }
+  state.slots[l + 1] = {
+    name: (src.name && src.name.trim()) ? src.name + ' (копия)' : '',
+    steps: src.steps.map(function (x) { return normalizeStep(JSON.parse(JSON.stringify(x))); })
+  };
+  state.selected = l + 1;
+  renderAll();
+}
+function addProgram() {
+  var l = lastOccupied();
+  if (l >= MAX_PROGS - 1) { alert('Уже ' + MAX_PROGS + ' программ - больше добавить нельзя.'); return; }
+  if (bytesOf(state.slots).total + 2 > MAX_TABLE) { alert('Не хватает места в таблице (лимит ' + MAX_TABLE + ' байт).'); return; }
+  state.slots[l + 1] = { name: '', steps: [defaultStep()] };
+  state.selected = l + 1;
+  renderAll();
+  var inp = $('#progName');
+  if (inp) { inp.focus(); inp.select(); }
+}
+
+/* ---------- события ---------- */
+function wire() {
+  document.querySelectorAll('[data-ic]').forEach(function (el) {
+    el.innerHTML = IC[el.getAttribute('data-ic')] || '';
+  });
+
+  $('#progList').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-a]');
+    var card = e.target.closest('.pcard');
+    if (!b && card) { state.selected = +card.getAttribute('data-i'); renderAll(); return; }
+    if (!b || !card) return;
+    var i = +card.getAttribute('data-i');
+    var a = b.getAttribute('data-a');
+    if (a === 'pup') moveProgram(i, -1);
+    else if (a === 'pdown') moveProgram(i, 1);
+    else if (a === 'pcopy') copyProgram(i);
+    else if (a === 'pdel') delProgram(i);
+  });
+
+  $('#progHead').addEventListener('change', function (e) {
+    if (e.target.id === 'progName') {
+      var s = curProg();
+      if (!s) return;
+      s.name = e.target.value.replace(/[\r\n]+/g, ' ').trim().slice(0, 80);
+      renderProgramList(); persist();
+    }
+  });
+  $('#progHead').addEventListener('click', function (e) {
+    if (e.target.closest('button[data-a="pdelcur"]')) delProgram(state.selected);
+  });
+
+  $('#stepsList').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-a]');
+    if (!b) return;
+    var a = b.getAttribute('data-a');
+    var i = +b.getAttribute('data-i');
+    var s = curProg();
+    if (!s) return;
+    var st = s.steps[i];
+    if (!st) return;
+    st.dirNoRev = false;
+    if (a === 'sup' && i > 0) { s.steps.splice(i, 1); s.steps.splice(i - 1, 0, st); }
+    else if (a === 'sdown' && i < s.steps.length - 1) { s.steps.splice(i, 1); s.steps.splice(i + 1, 0, st); }
+    else if (a === 'sdel') s.steps.splice(i, 1);
+    else if (a === 'mode') {
+      st.mode = b.getAttribute('data-v');
+      if (st.mode === 'dir') st.reverse = true;
+    }
+    else if (a === 'rep-') st.repeat = clamp(st.repeat - 1, 1, 15);
+    else if (a === 'rep+') st.repeat = clamp(st.repeat + 1, 1, 15);
+    else if (a === 'ch') st.pattern = st.pattern ^ (1 << (+b.getAttribute('data-ch')));
+    else return;
+    renderAll();
+  });
+
+  $('#stepsList').addEventListener('change', function (e) {
+    var t = e.target;
+    var a = t.getAttribute && t.getAttribute('data-a');
+    if (!a || t.getAttribute('data-i') == null) return;
+    var s = curProg();
+    if (!s) return;
+    var st = s.steps[+t.getAttribute('data-i')];
+    if (!st) return;
+    st.dirNoRev = false;
+    if (a === 'pal') st.pal = clamp(+t.value, 0, 15);
+    else if (a === 'speed') st.speed = clamp(+t.value, 0, 7);
+    else if (a === 'up') st.up = clamp(+t.value, 0, 3);
+    else if (a === 'down') st.down = clamp(+t.value, 0, 3);
+    else if (a === 'rev') st.reverse = !!t.checked;
+    else return;
+    renderAll();
+  });
+
+  $('#btnAddProg').addEventListener('click', addProgram);
+  $('#btnAddStep').addEventListener('click', function () {
+    var s = curProg();
+    if (!s) return;
+    s.steps.push(defaultStep());
+    renderAll();
+  });
+  $('#btnReset').addEventListener('click', function () {
+    if (resetToOriginal(true)) renderAll();
+  });
+  $('#btnDownload').addEventListener('click', doDownload);
+  $('#btnImport').addEventListener('click', function () { $('#fileImport').click(); });
+  $('#fileImport').addEventListener('change', onImportFile);
+  $('#btnPlay').addEventListener('click', togglePlay);
+  $('#selGSpeed').addEventListener('change', function () {
+    player.gSpeed = +this.value;
+    if (player.playing) restartPlay();
+  });
+  $('#chkThree').addEventListener('change', function () { player.three = this.checked; });
+  $('#chkDemo').addEventListener('change', function () { player.demo = this.checked; });
+}
+
+
+/* ============================================================
+   ПЛЕЕР: симуляция интерпретатора прошивки.
+   Прошивка (метки Run/MakeStep/Bright) каждые 10 мс (полупериод
+   сети) прибавляет/вычитает яркость каналов к цели из текущего
+   кадра, а по исчерпании StepTime переходит к следующему кадру
+   палитры, затем к следующему элементу программы.
+   ============================================================ */
+
+var player = {
+  playing: false, demo: false, gSpeed: 16, three: false,
+  prog: 0, elem: 0, framePos: 0, repeatLeft: 1, timer: 1, stepTime: 1,
+  pat: 0, speedUp: 1, speedDown: 1, bright: [0, 0, 0, 0], seq: [],
+  raf: 0, lastT: 0, acc: 0, jumps: 0
+};
+var bulbs = [];
+
+function buildLamps() {
+  var host = $('#lamps'), html = '';
+  for (var ch = 0; ch < 4; ch++) {
+    html += '<div class="lamp" style="--c:' + CH_COLORS[ch] + '"><div class="bulb"></div><div class="soc"></div><div class="cap">' + CH_NAMES[ch] + '</div></div>';
+  }
+  host.innerHTML = html;
+  bulbs = Array.prototype.slice.call(host.querySelectorAll('.bulb'));
+  renderLamps();
+}
+function renderLamps() {
+  for (var ch = 0; ch < 4; ch++) {
+    var b = clamp(player.bright[ch] / 240, 0, 1);
+    bulbs[ch].style.opacity = (0.16 + 0.84 * b).toFixed(3);
+    bulbs[ch].style.boxShadow = b > 0.01
+      ? '0 0 ' + (5 + 30 * b).toFixed(0) + 'px ' + (1 + 8 * b).toFixed(0) + 'px ' + hexA(CH_COLORS[ch], (0.08 + 0.5 * b).toFixed(2))
+      : 'none';
+  }
+}
+
+function curStepForPlayer() {
+  var p = (player.prog >= 0 && player.prog < MAX_PROGS) ? state.slots[player.prog] : null;
+  if (!p || player.elem < 0 || player.elem >= p.steps.length) return null;
+  return p.steps[player.elem];
+}
+
+function loadElement() {
+  var st = curStepForPlayer();
+  if (!st) { nextElement(); return; }
+  var sp = spds()[player.gSpeed] || spds()[16];
+  player.stepTime = Math.max(1, sp.exec[st.speed] | 0);
+  var bb = sp.bright[st.speed] | 0;
+  player.speedUp = st.up === 3 ? 240 : bb * (st.up === 1 ? 2 : st.up === 2 ? 4 : 1);
+  player.speedDown = st.down === 3 ? 240 : bb * (st.down === 1 ? 2 : st.down === 2 ? 4 : 1);
+  var frames;
+  if (st.mode === 'dir') {
+    frames = [st.dirNoRev ? 0 : st.pattern];
+  } else {
+    frames = pals()[st.pal].frames.slice();
+    if (st.reverse) frames.reverse();
+  }
+  player.seq = frames.map(function (v) { return { pat: v & 0x0F, skip: !!(v & 0x80) }; });
+  player.repeatLeft = (st.mode === 'pal') ? st.repeat : 1;
+  player.framePos = -1;
+  advanceFrame();
+}
+
+function advanceFrame() {
+  if (++player.jumps > 500) { stopPlay(); pv('Слишком много пустых переходов - останов'); return; }
+  var s = player.seq;
+  if (!s.length || s.every(function (f) { return player.three && f.skip; })) { nextElement(); return; }
+  for (;;) {
+    player.framePos++;
+    if (player.framePos >= s.length) {
+      if (player.repeatLeft > 1) { player.repeatLeft--; player.framePos = 0; }
+      else { nextElement(); return; }
+    }
+    if (!(player.three && s[player.framePos].skip)) break;
+  }
+  player.pat = s[player.framePos].pat;
+  player.timer = player.stepTime;
+  player.jumps = 0;
+}
+
+function nextElement() {
+  var p = (player.prog >= 0 && player.prog < MAX_PROGS) ? state.slots[player.prog] : null;
+  player.elem++;
+  if (!p || player.elem >= p.steps.length) {
+    if (player.demo) { if (!nextProgram()) return; }
+    else if (p && p.steps.length) { player.elem = 0; }
+    else { stopPlay(); pv('Программа пуста - остановлено'); return; }
+  }
+  loadElement();
+}
+function nextProgram() {
+  for (var k = 1; k <= MAX_PROGS; k++) {
+    var i = (player.prog + k) % MAX_PROGS;
+    var p = state.slots[i];
+    if (p && p.steps.length) { player.prog = i; player.elem = 0; return true; }
+  }
+  stopPlay(); pv('Нет непустых программ - остановлено');
+  return false;
+}
+
+function tick() {
+  for (var ch = 0; ch < 4; ch++) {
+    if (player.pat & (1 << ch)) player.bright[ch] = Math.min(240, player.bright[ch] + player.speedUp);
+    else player.bright[ch] = Math.max(0, player.bright[ch] - player.speedDown);
+  }
+  if (--player.timer <= 0) advanceFrame();
+}
+
+function loop(t) {
+  if (!player.playing) return;
+  var dt = Math.min(2000, t - player.lastT);
+  player.lastT = t;
+  player.acc += dt;
+  var guard = 0;
+  while (player.acc >= 10 && guard < 400) {
+    tick(); player.acc -= 10; guard++;
+    if (!player.playing) break;
+  }
+  renderPlayerFrame();
+  if (player.playing) player.raf = requestAnimationFrame(loop);
+}
+
+function pv(html) { $('#pvStat').innerHTML = html; }
+
+function renderPlayerFrame() {
+  renderLamps();
+  if (!player.playing) { markStep(-1); return; }
+  var p = state.slots[player.prog];
+  var st = p && p.steps[player.elem];
+  var bits = '';
+  if (st) {
+    if (st.mode === 'pal') {
+      var pl = pals()[st.pal];
+      bits = 'палитра #' + st.pal.toString(16).toUpperCase() +
+        (pl.name ? ' «' + esc(pl.name) + '»' : '') +
+        ' · кадр ' + (player.framePos + 1) + '/' + player.seq.length +
+        ' · повтор ' + (st.repeat - player.repeatLeft + 1) + '/' + st.repeat;
+    } else {
+      bits = 'каналы напрямую · код ' + player.pat;
+    }
+  }
+  pv('<b>Программа #' + player.prog + '</b>' + (p && p.name ? ' · ' + esc(p.name) : '') +
+    ' · шаг <b>' + (player.elem + 1) + '/' + (p ? p.steps.length : '?') + '</b> · ' + bits);
+  markStep(player.elem);
+}
+function markStep(idx) {
+  var list = $('#stepsList');
+  var cur = list.querySelector('.step.play');
+  if (cur) cur.classList.remove('play');
+  var chips = list.querySelectorAll('.fr.cur');
+  for (var i = 0; i < chips.length; i++) chips[i].classList.remove('cur');
+  if (idx < 0 || !player.playing || state.selected !== player.prog) return;
+  var card = list.querySelector('.step[data-step="' + idx + '"]');
+  if (card) {
+    card.classList.add('play');
+    var chip = card.querySelector('.fr[data-k="' + player.framePos + '"]');
+    if (chip) chip.classList.add('cur');
+  }
+}
+function markPlayingCard() {
+  var cards = $('#progList').querySelectorAll('.pcard');
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.toggle('playing', player.playing && +cards[i].getAttribute('data-i') === player.prog);
+  }
+}
+
+function setPlayBtn() {
+  $('#btnPlay').innerHTML = player.playing
+    ? '<span class="ic">' + IC.stop + '</span>Стоп'
+    : '<span class="ic">' + IC.play + '</span>Играть';
+}
+function togglePlay() { if (player.playing) stopPlay(); else startPlay(); }
+function startPlay() {
+  if (state.selected < 0 || !state.slots[state.selected]) { pv('Сначала добавьте программу'); return; }
+  player.playing = true;
+  player.demo = $('#chkDemo').checked;
+  player.three = $('#chkThree').checked;
+  player.prog = state.selected;
+  player.elem = 0;
+  player.bright = [0, 0, 0, 0];
+  player.jumps = 0;
+  loadElement();
+  if (!player.playing) { setPlayBtn(); return; }
+  player.lastT = performance.now(); player.acc = 0;
+  cancelAnimationFrame(player.raf);
+  player.raf = requestAnimationFrame(loop);
+  setPlayBtn(); markPlayingCard(); renderPlayerFrame();
+}
+function stopPlay() {
+  player.playing = false;
+  cancelAnimationFrame(player.raf);
+  setPlayBtn(); markPlayingCard(); markStep(-1);
+  renderLamps();
+}
+function restartPlay() {
+  if (!player.playing) return;
+  player.elem = 0;
+  player.bright = [0, 0, 0, 0];
+  player.jumps = 0;
+  loadElement();
+  player.lastT = performance.now(); player.acc = 0;
+}
+
+/* ============================================================
+   ИМПОРТ / СКАЧИВАНИЕ
+   ============================================================ */
+function onImportFile(e) {
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    try {
+      var res = fullParse(rd.result);
+      baseSource = rd.result;
+      baseName = f.name || 'XMAS.SRC';
+      parsedRef.palettes = res.palettes; parsedRef.speeds = res.speeds;
+      state.slots = res.slots;
+      if (player.playing) stopPlay();
+      ensureSelection(); renderAll();
+      var n = lastOccupied() + 1;
+      pv('Загружено из «' + esc(baseName) + '»: ' + n + ' программ' + plural(n, 'а', 'ы', '') +
+        ', таблица ' + bytesOf(state.slots).total + ' байт');
+    } catch (err) {
+      alert('Не удалось разобрать файл: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  rd.onerror = function () { alert('Не удалось прочитать файл'); e.target.value = ''; };
+  rd.readAsText(f, 'utf-8');
+}
+
+function doDownload() {
+  var b = bytesOf(state.slots);
+  if (b.total > MAX_TABLE) {
+    alert('Таблица программ занимает ' + b.total + ' байт из допустимых ' + MAX_TABLE +
+      '. Удалите лишние шаги (каждый шаг - 2 байта).');
+    return;
+  }
+  var text = buildSource(baseSource, state.slots);
+  var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = baseName || 'XMAS.SRC';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  pv('Файл «' + esc(a.download) + '» сформирован: таблица программ - ' + b.total + ' байт из ' + MAX_TABLE);
+}
+
+/* ============================================================
+   ЗАПУСК
+   ============================================================ */
+function init() {
+  buildLamps();
+  boot();
+  wire();
+  setPlayBtn();
+  renderAll();
+}
+init();
+
+/* отладочные хуки (используются и для самопроверки страницы) */
+window.__debug = {
+  state: function () { return JSON.parse(JSON.stringify({ slots: state.slots, selected: state.selected })); },
+  totalBytes: function () { return bytesOf(state.slots).total; },
+  generate: function () { return buildSource(baseSource, state.slots); },
+  parse: function (t) { return fullParse(t); },
+  palettes: function () { return pals(); },
+  speeds: function () { return spds(); },
+  baseName: function () { return baseName; },
+  player: player,
+  sim: function (n, opts) {
+    opts = opts || {};
+    player.gSpeed = opts.gSpeed != null ? opts.gSpeed : 16;
+    player.three = !!opts.three;
+    player.demo = !!opts.demo;
+    player.prog = opts.prog != null ? opts.prog : Math.max(0, state.selected);
+    player.elem = 0; player.bright = [0, 0, 0, 0]; player.jumps = 0;
+    player.playing = true;
+    try {
+      loadElement();
+      for (var i = 0; i < n && player.playing; i++) tick();
+      var wasPlaying = player.playing;
+      player.playing = false;
+      return {
+        ok: true, wasPlaying: wasPlaying, prog: player.prog, elem: player.elem,
+        framePos: player.framePos, pat: player.pat, bright: player.bright.slice(),
+        min: Math.min.apply(null, player.bright), max: Math.max.apply(null, player.bright)
+      };
+    } catch (err) {
+      player.playing = false;
+      return { ok: false, error: String((err && err.stack) || err) };
+    }
+  }
+};
+
+})();
+</script>
+</body>
+</html>
