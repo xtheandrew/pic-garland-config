@@ -123,6 +123,20 @@ main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;padding:18p
 }
 .lamp .soc{width:14px;height:9px;background:linear-gradient(180deg,#4a5561,#2c343d);border-radius:0 0 4px 4px;margin-top:-1px}
 .lamp .cap{font-size:10.5px;color:var(--tx2);letter-spacing:.4px}
+/* мини-гирлянда рядом с каналами: провисающий провод фоном, лампочки висят вниз */
+.garland{
+  display:flex;align-self:center;user-select:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='8'%3E%3Cpath d='M0 1Q12 8.2 24 1' fill='none' stroke='%23424e5f' stroke-width='1.4'/%3E%3C/svg%3E");
+  background-repeat:repeat-x;
+}
+.gdrop{width:24px;display:flex;flex-direction:column;align-items:center;padding-top:5px}
+.gdrop i{width:2px;height:7px;background:linear-gradient(180deg,#4a5561,#39414e);border-radius:1px}
+.gdrop .gbulb{
+  width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%, rgba(255,255,255,.3) 0 12%, var(--c) 55%, rgba(0,0,0,.55) 135%);
+  border:1px solid rgba(0,0,0,.6);transition:box-shadow .08s linear;
+}
+.gdrop .gn{font-size:8.5px;color:var(--tx3s);font-family:var(--mono);line-height:1;margin-top:2px}
 .pv-ctrl{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-left:auto}
 .fld{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--tx2)}
 select,input[type=text]{
@@ -279,6 +293,7 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
   <section class="editcol">
     <div class="panel preview">
       <div class="pv-lamps" id="lamps"></div>
+      <div class="garland" id="garland" title="Мини-гирлянда: лампочки тех же цветов подключены к каналам 1-2-3-4-1-2-3-4-…"></div>
       <div class="pv-ctrl">
         <button id="btnPlay" class="btn primary" title="Проиграть выбранную программу (как на устройстве)"><span class="ic" data-ic="play"></span>Играть</button>
         <label class="fld">Скорость устройства
@@ -1901,6 +1916,7 @@ var player = {
   hold: false, done: true, raf: 0, lastT: 0, acc: 0, jumps: 0
 };
 var bulbs = [];
+var garlandBulbs = [];
 
 function buildLamps() {
   var host = $('#lamps'), html = '';
@@ -1909,7 +1925,18 @@ function buildLamps() {
   }
   host.innerHTML = html;
   bulbs = Array.prototype.slice.call(host.querySelectorAll('.bulb'));
+  buildGarland();
   renderLamps();
+}
+/* Мини-гирлянда справа от каналов: те же цвета, подключение 1-2-3-4-1-2-3-4... */
+function buildGarland() {
+  var host = $('#garland'), html = '';
+  for (var i = 0; i < 20; i++) {
+    var ch = i & 3;
+    html += '<div class="gdrop" style="--c:' + CH_COLORS[ch] + '"><i></i><div class="gbulb"></div><span class="gn">' + (ch + 1) + '</span></div>';
+  }
+  host.innerHTML = html;
+  garlandBulbs = Array.prototype.slice.call(host.querySelectorAll('.gbulb'));
 }
 function renderLamps() {
   for (var ch = 0; ch < 4; ch++) {
@@ -1917,6 +1944,17 @@ function renderLamps() {
     bulbs[ch].style.opacity = (0.16 + 0.84 * b).toFixed(3);
     bulbs[ch].style.boxShadow = b > 0.01
       ? '0 0 ' + (5 + 30 * b).toFixed(0) + 'px ' + (1 + 8 * b).toFixed(0) + 'px ' + hexA(CH_COLORS[ch], (0.08 + 0.5 * b).toFixed(2))
+      : 'none';
+  }
+  renderGarland();
+}
+function renderGarland() {
+  for (var i = 0; i < garlandBulbs.length; i++) {
+    var ch = i & 3;
+    var b = clamp(player.bright[ch] / BRIGHT_MAX, 0, 1);
+    garlandBulbs[i].style.opacity = (0.16 + 0.84 * b).toFixed(3);
+    garlandBulbs[i].style.boxShadow = b > 0.01
+      ? '0 0 ' + (2 + 9 * b).toFixed(0) + 'px ' + (0.5 + 2.5 * b).toFixed(1) + 'px ' + hexA(CH_COLORS[ch], (0.1 + 0.55 * b).toFixed(2))
       : 'none';
   }
 }
