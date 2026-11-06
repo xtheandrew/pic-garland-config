@@ -223,7 +223,7 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
     <div class="mini-garland" aria-hidden="true"><i style="--c:var(--c1)"></i><i style="--c:var(--c2)"></i><i style="--c:var(--c3)"></i><i style="--c:var(--c4)"></i></div>
     <div class="brand-tx">
       <h1>Редактор программ гирлянды</h1>
-      <p>XMAS.SRC · контроллер бегущих огней · 4 канала · до 16 программ</p>
+      <p>XMAS.SRC · PIC16F628A · 4 канала · до 16 программ · сетка яркости 32 уровня · файлы CP1251/CRLF</p>
     </div>
   </div>
   <div class="budget" id="budgetBox">
@@ -232,9 +232,9 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
     <span class="btext" id="budgetText">— / 250</span>
   </div>
   <div class="topbtns">
-    <button id="btnImport" class="btn" title="Загрузить файл .src (например, ранее скачанный из этого редактора)"><span class="ic" data-ic="imp"></span>Импорт</button>
-    <button id="btnReset" class="btn ghost" title="Вернуть исходные 5 программ из XMAS.SRC"><span class="ic" data-ic="rst"></span>Сбросить</button>
-    <button id="btnDownload" class="btn primary" title="Скачать полный код прошивки с вашими программами"><span class="ic" data-ic="dl"></span>Скачать XMAS.SRC</button>
+    <button id="btnImport" class="btn" title="Загрузить файл .src в CP1251 (или UTF-8 - например, скачанный из старой версии редактора)"><span class="ic" data-ic="imp"></span>Импорт</button>
+    <button id="btnReset" class="btn ghost" title="Вернуть исходные программы из XMAS.SRC"><span class="ic" data-ic="rst"></span>Сбросить</button>
+    <button id="btnDownload" class="btn primary" title="Скачать полный код прошивки (CP1251, окончания строк CRLF) с вашими программами"><span class="ic" data-ic="dl"></span>Скачать XMAS.SRC</button>
   </div>
 </header>
 
@@ -252,7 +252,11 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
         <h3>Шаг</h3>
         <p>Каждый шаг — либо <b>палитра</b> (готовая последовательность кадров из таблицы <code>Pattern</code>, проигрываемая заданное число раз), либо <b>непосредственное состояние каналов</b> (4 выключателя). Флажок «реверс» проигрывает палитру задом наперёд; в режиме прямого управления он включается автоматически — так требует формат прошивки.</p>
         <h3>Скорость и яркость</h3>
-        <p>«Скорость шага» — длительность одного кадра; она пересчитывается для трёх общих скоростей устройства (медленно / нормально / быстро). «Разгорание» и «затухание» — плавность включения и выключения каналов внутри шага: плавно по таблице, вдвое быстрее, вчетверо быстрее или мгновенно.</p>
+        <p>«Скорость шага» — длительность одного кадра; она пересчитывается для трёх общих скоростей устройства (медленно / нормально / быстро). «Разгорание» и «затухание» — плавность включения и выключения каналов внутри шага: плавно по таблице, вдвое быстрее, вчетверо быстрее или мгновенно. Эта версия прошивки использует тонкую сетку яркости (32 уровня, коды <code>000h…0F8h</code>): за длительность любого шага включаемый канал успевает разгореться до максимума, выключаемый — погаснуть до нуля, на любой скорости устройства и при любом коде скорости шага.</p>
+        <h3>Режимы устройства и предпросмотр</h3>
+        <p>Спецрежимы включаются при подаче питания удержанием кнопки 4 вместе с другой кнопкой и сохраняются в EEPROM: <b>4+1</b> — «резкое» включение/выключение без плавной регулировки; <b>4+2</b> — последовательная смена каналов (предыдущий канал полностью гаснет, и только затем разгорается следующий; шаг продлевается, пока не завершатся все переходы яркости); <b>4+3</b> — трёхканальный режим (кадры палитр с пометкой «3к» пропускаются). В предпросмотре это галочки «Последовательно» и «3 канала», а «Демо-перебор» — как кнопка 4 при работе.</p>
+        <h3>Формат файла</h3>
+        <p>Исходник прошивки хранится в кодировке <b>CP1251</b> с <b>окончаниями строк Windows (CRLF)</b> — так требует компилятор. Редактор берёт на себя перекодирование: «Импорт» понимает CP1251 и UTF-8 (определяется автоматически), «Скачать» всегда выдаёт файл в CP1251 с CRLF. Символы, которых нет в CP1251 (например, эмодзи в названии программы), при скачивании заменяются на «?».</p>
         <h3>Формат элемента (2 байта на шаг)</h3>
         <pre>байт 1:  R R R R  P P P P      R - повторы палитры (0-15)
                             P - код палитры (0-15)
@@ -284,6 +288,7 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
             <option value="32">Быстро</option>
           </select>
         </label>
+        <label class="chk" title="Спецрежим 4+2 при подаче питания: предыдущий канал полностью гаснет, и только затем разгорается следующий"><input type="checkbox" id="chkSeq"><span>Последовательно</span></label>
         <label class="chk" title="Пропускать кадры палитр, помеченные для трёхканального режима"><input type="checkbox" id="chkThree"><span>3 канала</span></label>
         <label class="chk" title="Как кнопка 4 на устройстве: перебирать все программы по кругу"><input type="checkbox" id="chkDemo"><span>Демо-перебор</span></label>
       </div>
@@ -296,13 +301,12 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
 </main>
 
 <footer class="foot">
-  <span>Устройство: кнопки 1/2 — выбор программы, 3 — общая скорость, 4 — демо-перебор. Прошивка: (c) Vladislav Baliasov, 1998.</span>
+  <span>Устройство: кнопки 1/2 — выбор программы, 3 — общая скорость, 4 — демо-перебор; при подаче питания кнопка 4 вместе с 1/2/3 — спецрежимы. Прошивка: (c) Vladislav Baliasov, 1998 · порт PIC16F628A.</span>
   <span id="saveHint">Изменения автосохраняются в этом браузере</span>
 </footer>
 
 <input type="file" id="fileImport" accept=".src,.asm,.txt" hidden>
 <script type="text/plain" id="orig-src">; Переключатель елочных гирлянд на основе PIC16F628A.
-; Адаптировано под точные определения фьюзов из 16f628a.inc в кодировке UTF-8.
 
 ; Поддерживает четыре канала управления (используется фазовое управление
 ; мощными тиристорами с дублирование на контрольные светодиоды).
@@ -310,7 +314,8 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
 ; Режим программирования - при включении питания удержать нажатой кнопку 4,
 ; и, одновременно, кнопки, определяющие установку спецрежимов:
 ; 1 - режим "резкого" включения/выключения, без плавной регулировки;
-; 2 - резерв;
+; 2 - режим последовательной смены каналов: предыдущий канал полностью
+; гаснет, и только затем начинает разгораться следующий;
 ; 3 - режим управления тремя каналами, четвертый канал в некоторых режимах
 ; не использовать (типа "бегущих огней").
 
@@ -321,13 +326,12 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
 ; 1 или 2).
 
 ; (c) by Vladislav Baliasov, 1998
-; Модификация под PIC16F628A, 2026.
 
 ; Тактовая частота - 4.000 MHz.
 
            include 'c:\pictools\16f628a.inc'
-           ; Используем точные имена констант из вашего .inc файла:
-           fuses   _INTOSC_OSC_NOCLKOUT
+
+           fuses   _XT_OSC
            fuses   _WDT_OFF
            fuses   _PWRTE_ON
            fuses   _CP_OFF
@@ -348,7 +352,6 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--acc)}
 ; rb.6 - кнопка 3 (0-активный);
 ; rb.7 - кнопка 4 (0-активный);
 
-; У PIC16F628A пользовательское ОЗУ начинается с адреса 32 (0x20)
            org     32
 
 W_save     ds      1           ; сохрание W при прерывании
@@ -364,6 +367,9 @@ _Four      equ     Flags.1     ; режим четырех каналов (ес�
 _NoPatt    equ     Flags.2     ; для этого шага не использовать "палитру"
 _NoPWM     equ     Flags.3     ; не использовать регулировку яркости
 _Demo      equ     Flags.4     ; режим перебора программ
+_Seq       equ     Flags.5     ; последовательная смена каналов (в EEPROM)
+_Hold      equ     Flags.6     ; служебный: идет затухание канала (для _Seq)
+_Done      equ     Flags.7     ; служебный: все переходы яркости завершены
 
 ; Переменные, используемые интерпретатором программу управления
 
@@ -378,7 +384,8 @@ SpeedUp    ds      1           ; скорость нарастания ярко�
 SpeedDown  ds      1           ; скорость спада яркости
 
 Timer      ds      1           ; счетчик полупериодов (дискреты по 10 mS)
-Phase      ds      1           ; счетчик фазы полупериода (F0>E0>D0...10>00)
+Phase      ds      1           ; счетчик фазы полупериода (F8>F0>E8...18>10>08)
+SlotNum    ds      1           ; номер слота фазы, индекс таблицы Time
 
 ; Переменные, определяющие яркость каналов
 
@@ -417,9 +424,9 @@ Key4       equ     rb.7        ; кнопка 4
            mov     S_save,status
            mov     PCH_save,PCLath
 Reload
-           sub     Phase,#10h  ; уменьшаем счетчик фазы
-           mov     w,<>Phase
-           and     w,#0Fh      ; индекс в таблице dT
+           sub     Phase,#08h  ; уменьшаем счетчик фазы (шаг сетки - 8)
+           dec     SlotNum     ; следующий слот (31...0)
+           mov     w,SlotNum   ; индекс в таблице Time
            call    Time
            mov     TMR0,w      ; новое значение таймера
 
@@ -429,13 +436,13 @@ Reload
            jb      _NoPWM,On   ; режим On/OFF
 CheckChn
            csb     Ch1_,Phase  ; канал 1
-           clrb    SCR1
+           setb    SCR1
            csb     Ch2_,Phase  ; канал 2
-           clrb    SCR2
+           setb    SCR2
            csb     Ch3_,Phase  ; канал 3
-           clrb    SCR3
+           setb    SCR3
            csb     Ch4_,Phase  ; канал 4
-           clrb    SCR4
+           setb    SCR4
            jmp     CheckPhase
 
 ; Управление в режиме включить/выключить, выполняется один раз в начале
@@ -443,20 +450,20 @@ CheckChn
 ; уровень ЭМ-помех от устройства.
 
 On
-           cjne    Phase,#0F0h,CheckPhase ; если не в начале полупериода
+           cjne    Phase,#0F8h,CheckPhase ; если не в начале полупериода
            snb     Ch1_.7
-           clrb    SCR1        ; включить, если Ch1_ > 70h
+           setb    SCR1        ; включить, если Ch1_ > 70h
            snb     Ch2_.7
-           clrb    SCR2        ; включить, если Ch2_ > 70h
+           setb    SCR2        ; включить, если Ch2_ > 70h
            snb     Ch3_.7
-           clrb    SCR3        ; включить, если Ch4_ > 70h
+           setb    SCR3        ; включить, если Ch4_ > 70h
            snb     Ch4_.7
-           clrb    SCR4        ; включить, если Ch4_ > 70h
+           setb    SCR4        ; включить, если Ch4_ > 70h
 
 ; Процесс включения тиристоров закончен. Контроль окончания полупериода...
 
 CheckPhase
-           cja     Phase,#0Fh,IntExit ; полупериод еще не кончился
+           cja     Phase,#0Fh,IntExit ; не кончился (08h - последний слот)
 
 ; Обработка окончания полупериода. Вероятно, здесь же надо обрабатывать
 ; нажатие управляющих клавиш.
@@ -464,7 +471,8 @@ CheckPhase
            jnb     Synch,$     ; ждем положительного фронта сигнала Synch
            clr     w
            clr     Phase       ; начальное состояние
-           mov     rb,#0Fh     ; снимаем сигнал управления с тиристоров
+           mov     SlotNum,#32 ; следующий слот - 31 (0F8h)
+           mov     rb,#00h     ; снимаем сигнал управления с тиристоров
            dec     Timer       ; уменьшаем счетчик полупериодов
            mov     Ch1_,Ch1    ; копирование
            mov     Ch2_,Ch2    ; канальных
@@ -479,18 +487,31 @@ IntExit
            mov     W,<>W_save
            reti
 
-; Таблица значений для загрузки таймера
+; Таблица значений для загрузки таймера. Сетка фазового управления -
+; 32 слота на полупериод, шаг фазы 8 (коды яркости 000h...0F8h).
+; Индекс элемента = фаза/8: 0 - слот 00h, 1 - слот 08h, ..., 31 - слот F8h
+; (первый после синхроимпульса). Элемент - код перезагрузки TMR0 (такт
+; 8 uS), длительность слота = (256 - код) тактов. Длительности рассчитаны
+; из геометрической прогрессии мощности (примерно +19% на уровень),
+; поэтому ступени яркости воспринимаются примерно одинаковыми. Слот 08h -
+; последний слот яркости, его хвост и слот 00h (код 0, до 2048 uS) -
+; ожидание синхроимпульса. Канал с кодом 00h теперь не открывается вовсе.
 
 Time
            clr     PCLath
            jmp     pc+w
-           retw    0,242,240,236,229,222,215,207,197,185,171,153,132,108,81,41
+           retw    0,0,248,248,248,247,246,246,245,245,243,243,242,241,240,239
+           retw    237,236,235,233,230,229,226,222,219,214,207,199,184,159,62,42
 
 ; Таблица скоростей выполнения. состоит из трех 16-байтных сегментов,
 ; для скоростей "медленно", "нормально", "быстро".
 ; В зависимости от кода скорости 0...7 программы выбирается счетчик 10-mS тактов
 ; для выполнения одного шага "палитры". Вторая часть сегмента содержит
 ; коды скоростей нарастания/убывания яркости при включении/выключении каналов.
+; Прирост яркости за такт подобран из условия StepTime x прирост >= 248
+; (полный диапазон 000h...0F8h за один шаг "палитры"): включаемый канал
+; успевает разгореться до конца, выключаемый - погаснуть до нуля,
+; независимо от скорости устройства и кода скорости программы.
 
 GetSpeed
            clr     PCLath
@@ -499,16 +520,16 @@ GetSpeed
 ; "Медленно"
 
            retw    255,255,160,128,90,64,32,16 ; скорость выполнения
-           retw    1,1,1,1,2,2,4,8            ; поведение яркости
+           retw    1,1,2,2,3,4,8,16           ; поведение яркости
 
 ; "Нормально"
 
            retw    255,160,128,90,64,32,16,8  ; скорость выполнения
-           retw    1,1,1,2,2,4,8,16           ; поведение яркости
+           retw    1,2,2,3,4,8,16,32          ; поведение яркости
 
 ; "Быстро"
            retw    160,128,90,64,32,16,8,8    ; скорость выполнения
-           retw    1,1,2,2,4,8,16,16          ; поведение яркости
+           retw    2,2,3,4,8,16,32,32         ; поведение яркости
 
 ; Таблицы "палитр". Каждая "палитра" начинается с счетчика байтов в "палитре",
 ; включая сам счетчик. Байты-элементы "палитры" содержат код состояния
@@ -625,10 +646,9 @@ Pattern
 ;----------------------------------------------------------------------
 
 Init
-           ; Отключаем аналоговые компараторы на PORTA у PIC16F628A
-           mov     01Fh,#7     ; CMCON = 7
+           mov     01Fh,#7             ; Отключение компараторов на PIC16F628A
 
-           mov     rb,#255
+           mov     rb,#0
            mov     !rb,#11110000b      ; младшие на вывод (управление)
            mov     !option,#00000010b  ; включаем pull-up резисторы
            mov     MainSpeed,#16       ; "нормальная скорость"
@@ -645,24 +665,29 @@ Init1
 ; некоторые специальные режимы устройства:
 ; Key1 - режим "резкого" включения/выключения ламп, без использования PWM
 ; (это сделано для уменьшения возможных ЭM-помех от устройства);
-; Key2 - резерв;
+; Key2 - режим последовательной смены каналов: канал полностью гаснет,
+; и только потом начинает разгораться следующий;
 ; Key3 - режим трех каналов (используется для правильного формирования
 ; диаграммы для трех гирлянд в режиме "бегущие огни").
 
            jb      Key4,Init2          ; программирование не требуется
            sb      Key1
            setb    _NoPWM
+           sb      Key2
+           setb    _Seq
            sb      Key3
            clrb    _Four
-           clr     temp                ; используем temp для передачи адреса 0
-           mov     w,Flags
+           clr     temp
+           mov     w,Flags             ; флажки сохраняются в EEPROM
            call    EEWrite             ; сохраняем
 Init2
            clr     temp
            call    EERead
            mov     Flags,w             ; восстанавливаем флажки из EEPROM
            jnb     Key4,$              ; ждем отпускания Key4
-           mov     intcon,#10100000b   ; разрешаем прерывания от таймера
+           clr     Phase               ; фазу и счетчик слотов инициализируем
+           mov     SlotNum,#32         ; до разрешения прерываний (при
+           mov     intcon,#10100000b   ; включении питания RAM случайна)
            clr     ProgNum
 
 ; Инициализация устройства закончена. Основной цикл выполнения программы.
@@ -760,7 +785,7 @@ Run
            and     Repeat,w    ; и правильное значение счетчика
            snz
            setb    _NoPatt     ; не использовать "палитру"
-           clr     PattNum     ; обнулим счетчик индекс таблицы "палитр"
+           clr     PattNum     ; обнулим счетчик индекса таблицы "палитр"
            jb      _NoPatt,SetSpeed ; "палитра" не используется
 
 ; В переменной PattStep сейчас находится номер "палитры". Теперь надо
@@ -816,7 +841,7 @@ SetSpeed
            snb     temp.1
            rl      SpeedDown   ; еще удвоим
            xor     w,#3
-           mov     w,#0F0h     ; код для режима ON/OFF
+           mov     w,#0F8h     ; код для режима ON/OFF
            snz
            mov     SpeedDown,w ; если требуется "резкое" выключение
 
@@ -830,7 +855,7 @@ SetSpeed
            snb     temp.3
            rl      SpeedUp     ; еще удвоим
            xor     w,#0Ch
-           mov     w,#0F0h     ; код для режима ON/OFF
+           mov     w,#0F8h     ; код для режима ON/OFF
            snz
            mov     SpeedUp,w   ; если требуется "резкое" включение
 
@@ -856,6 +881,38 @@ MakeStep3
 ; определяют изменение яркости каналов, 1 соответствует включению
 ; канала, а 0 - выключению.
 
+; Последовательный режим (_Seq): в начале каждого такта, пока temp еще
+; содержит биты элемента, одним проходом по каналам вычисляются два
+; флажка. _Hold - какой-то выключаемый канал еще светит: включаемые
+; каналы не разгораются, гашение успевает полностью завершиться до
+; начала разгорания следующего канала. _Done - все переходы яркости
+; завершены (выключаемые погасли до нуля, включаемые достигли
+; максимума): только тогда шагу разрешается закончиться. Биты элемента
+; проходят через count ровно один раз, до затирания temp таймером.
+
+           clrb    _Hold
+           setb    _Done           ; предположим: переходы завершены
+           jnb     _Seq,NoSeq
+           mov     count,temp      ; биты текущего элемента
+           mov     fsr,#Ch1
+SeqScan
+           jb      count.0,SeqScan1 ; канал включается - не задерживаем
+           mov     w,indf          ; выключаемый канал еще светит ?
+           jz      SeqScan2        ; уже погас - в порядке
+           setb    _Hold           ; светит - задержим разгорание остальных
+           clrb    _Done           ; и переход еще не завершен
+           jmp     SeqScan2
+SeqScan1
+           mov     w,indf          ; включаемый канал достиг максимума ?
+           and     w,#0F8h         ; коды 0F8h...0FFh считаем максимумом
+           xor     w,#0F8h
+           sz
+           clrb    _Done           ; еще не разгорелся до конца
+SeqScan2
+           rr      count           ; следующий бит
+           inc     fsr             ; следующий канал
+           cjbe    fsr,#Ch4,SeqScan
+NoSeq
            mov     fsr,#Ch1    ; указатель на первый канал
 Bright
            jb      temp.0,Up   ; увеличения яркости
@@ -865,8 +922,9 @@ Bright
            mov     indf,w      ; чтобы не выйти за пределы
            jmp     NextChn
 Up
+           jb      _Hold,NextChn ; последовательный режим: ждем затухания
            add     indf,SpeedUp
-           mov     w,#0F0h     ; максимум
+           mov     w,#0F8h     ; максимум
            snc
            mov     indf,w      ; чтобы не выйти за пределы
 NextChn
@@ -879,8 +937,19 @@ Wait
            test    Timer       ; шаг закончился ?
            jnz     MakeStep1   ; нет
 
+; Последовательный режим: шаг не завершается по истечении заданного
+; времени, пока не завершатся все переходы яркости (флажок _Done,
+; вычисляемый в начале каждого такта). Незавершенный шаг продлевается
+; по два такта (20 mS) до полной завершенности переходов.
+
+           jnb     _Seq,StepDone   ; обычный режим - шаг завершен
+           jb      _Done,StepDone  ; переходы завершены - шаг завершен
+           mov     Timer,#2        ; иначе продлеваем шаг на два такта
+           jmp     MakeStep1
+
 ; Следующий шаг в "палитре"
 
+StepDone
            jb      _NoPatt,MakeStep4 ; "палитра" не используется
 NextStep
            mov     w,PattNum   ; начало "палитры"
@@ -898,27 +967,31 @@ MakeStep4
            inc     Step        ; следующий элемент программы
            jmp     Run
 
-; --- Новая логика чтения/записи EEPROM для PIC16F628A под CVASM16 ---
-
-eeread
+EERead
+           mov     w, temp
            setb    rp0         ; переключим страницу регистров (Банк 1)
-           mov     EEADR, temp  ; Записываем адрес из temp в EEADR (09Fh)
-           setb    rd          ; инициируем чтение (EECON1.0)
-           mov     w, EEDATA     ; Считываем значение из EEDATA (09Eh) в W
+           mov     EEADR, w    ; записываем адрес из temp в EEADR
+           setb    rd          ; инициируем чтение
+           mov     w, EEDATA   ; считываем значение из EEDATA в W
            clrb    rp0         ; восстановим Банк 0
            ret
 
-eewrite
+EEWrite
            setb    rp0         ; переключим страницу регистров (Банк 1)
-           mov     EEDATA, w     ; Записываем значение из W в EEDATA (09Eh)
-           mov     EEADR, temp  ; Записываем адрес из temp в EEADR (09Fh)
+           mov     EEDATA, w   ; записываем значение из W в EEDATA
+           clrb    rp0         ; возвращаемся в Банк 0, чтобы прочитать temp
+           mov     w, temp     ; сохраняем значение temp в регистр
+           setb    rp0         ; снова переходим в Банк 1
+           mov     EEADR, w    ; записываем адрес из регистра в EEADR
            setb    wren        ; разрешаем запись в NVRAM
+           clrb    gie         ; запрещаем прерывания
+           jb      gie,$       ; ждём, пока выключатся
            mov     eecon2,#055h
            mov     eecon2,#0AAh
            setb    wr          ; запускаем процесс записи
-eewrite1
-           jnb     eeif,$      ; ждем окончания процесса
-           clrb    eeif        ; сбросим флажок
+EEWrite1
+           jb      wr,$        ; ждем окончания процесса
+           setb    gie         ; возвращаем прерывания
            clrb    wren        ; запрещаем запись
            clrb    rp0         ; восстановим Банк 0
            ret
@@ -932,17 +1005,18 @@ eewrite1
 ; Каждая программа состоит из произвольного числа двухбайтовых
 ; элементов, и оканчивается байтом со значением 0FFh. Структура элемента:
 ; xxxx xxxx   xxxx xxxx
-;       Скорость убывания яркости при выключении
-;
-;                Скорость нарастания яркости при включении
-;
-;              Скорость выполнения
-;
-;            Признак реверса (выполнение "задом наперед")
-;
-;         Код "палитры"
-;
-;     Коэффициент повторения
+; |||| ||||   |||| ||||
+; \--| \--|   |\-| \|\|----- Скорость убывания яркости при выключении
+;    |    |   |  |  |
+;    |    |   |  |  +------- Скорость нарастания яркости при включении
+;    |    |   |  |
+;    |    |   |  +---------- Скорость выполнения
+;    |    |   |
+;    |    |   +------------- Признак реверса (выполнение "задом наперед")
+;    |    |
+;    |    +----------------- Код "палитры"
+;    |
+;    +---------------------- Коэффициент повторения
 
 ; Коэффициент повторения - число в диапазоне 0...15, если указано 0,
 ; то состояние каналов берется не из "палитры", а непосредственно
@@ -962,68 +1036,89 @@ Program
            setb    PCLath.0
            jmp     pc+w        ; выборка из таблицы
 
-; Просто разные комбинации бегущих огней...
+; Программа 1
 
-           retw    031h,045h
-           retw    012h,045h
-           retw    01Ah,045h
-           retw    014h,041h
-           retw    021h,045h
-           retw    012h,045h
-           retw    013h,041h
-           retw    045h,055h
-           retw    023h,0C1h
-           retw    023h,041h
-           retw    042h,045h
-           retw    042h,0C5h
-           retw    045h,055h
+           retw    061h,000h
+           retw    255
+
+; Программа 2
+
+           retw    061h,080h
+           retw    255
+
+; Программа 3
+
+           retw    060h,000h
+           retw    255
+
+; Программа 4
+
+           retw    060h,080h
+           retw    255
+
+; Программа 5
+
+           retw    065h,000h
+           retw    255
+
+; Программа 6
+
+           retw    065h,080h
+           retw    255
+
+; Программа 7
+
+           retw    06Ah,000h
+           retw    255
+
+; Программа 8
+
+           retw    06Ah,080h
+           retw    255
+
+; Программа 9
+
+           retw    066h,000h
+           retw    255
+
+; Программа 10
+
+           retw    066h,080h
+           retw    255
+
+; Программа 11
+
+           retw    061h,045h
+           retw    255
+
+; Программа 12
+
+           retw    068h,000h
+           retw    255
+
+; Программа 13
+
+           retw    068h,080h
+           retw    255
+
+; Программа 14
+
+           retw    067h,000h
+           retw    255
+
+; Программа 15
+
+           retw    067h,080h
+           retw    255
+
+; Программа 16
+
+           retw    069h,000h
            retw    255
 
 
-; HT-2040 Group-3 (1)
-
-           retw    022h,045h
-           retw    042h,055h
-           retw    082h,065h
-           retw    0F2h,075h
-           retw    082h,065h
-           retw    042h,055h
-           retw    022h,045h
-           retw    255
-
-; HT-2040 Group-4 (2)
-
-           retw    042h,055h
-           retw    082h,065h
-           retw    082h,0E5h
-           retw    0F2h,075h
-           retw    0F2h,0F5h
-           retw    082h,0E5h
-           retw    042h,0D5h
-           retw    255
-
-; HT-2040 Group-6 (3)
-
-           retw    040h,055h
-           retw    080h,065h
-           retw    0F0h,075h
-           retw    255
-
-; HT-2040 Group-7 (4)
-
-           retw    040h,055h
-           retw    080h,065h
-           retw    0F0h,075h
-           retw    0F0h,0F5h
-           retw    080h,0E5h
-           retw    040h,0D5h
-
-; Пустышки - чтобы не было проблем при выборке несуществующей программы
-
-           retw    255,255,255,255,255,255,255,255,255,255,255,255,255,255
-
-
-           end</script>
+           end
+</script>
 <script>
 (function () {
 "use strict";
@@ -1034,6 +1129,12 @@ Program
      байт 1: [повторы 0-15][код палитры 0-15]
              повторы=0 -> младшие биты = прямая маска каналов (нужен реверс)
      байт 2: [реверс][скорость 0-7][разгорание 00-11][затухание 00-11]
+   Прошивка XMAS (тонкая сетка яркости): коды яркости 000h..0F8h,
+   максимум 248 единиц, «резкое» включение = +248 за такт.
+   Файлы прошивки хранятся в CP1251 с окончаниями строк CRLF -
+   как требует компилятор. Внутри редактора текст всегда CRLF;
+   импорт понимает CP1251 (и UTF-8 для старых файлов), экспорт -
+   всегда CP1251 + CRLF.
    ============================================================ */
 
 var $ = function (s) { return document.querySelector(s); };
@@ -1041,6 +1142,8 @@ var CH_COLORS = ['#ff5d5d', '#ffc24d', '#5ce08f', '#5db8ff'];
 var CH_NAMES = ['Канал 1', 'Канал 2', 'Канал 3', 'Канал 4'];
 var MAX_TABLE = 250;          // предел из комментария в исходнике
 var MAX_PROGS = 16;
+var BRIGHT_MAX = 248;         // максимум яркости 0F8h (тонкая сетка, 32 уровня)
+var BASE_FILE = 'XMAS.SRC';  // имя базового файла прошивки
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, function (c) {
@@ -1087,6 +1190,66 @@ function parseNum(tok) {
 }
 function hexB(b) {
   return '0' + (b & 0xFF).toString(16).toUpperCase().padStart(2, '0') + 'h';
+}
+
+/* ---------- CP1251 + CRLF: формат файлов прошивки ---------- */
+
+/* Старшая половина таблицы CP1251: символы для байтов 0x80..0xFF.
+   Байты 0x00..0x7F совпадают с ASCII. Позиция 0x98 в CP1251 не
+   определена - используем управляющий U+0098 как заполнитель,
+   чтобы кодирование/декодирование было точным в обе стороны. */
+var CP1251_HIGH = '\u0402\u0403\u201A\u0453\u201E\u2026\u2020\u2021\u20AC\u2030\u0409\u2039\u040A\u040C\u040B\u040F\u0452\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u0098\u2122\u0459\u203A\u045A\u045C\u045B\u045F\u00A0\u040E\u045E\u0408\u00A4\u0490\u00A6\u00A7\u0401\u00A9\u0404\u00AB\u00AC\u00AD\u00AE\u0407\u00B0\u00B1\u0406\u0456\u0491\u00B5\u00B6\u00B7\u0451\u2116\u0454\u00BB\u0458\u0405\u0455\u0457\u0410\u0411\u0412\u0413\u0414\u0415\u0416\u0417\u0418\u0419\u041A\u041B\u041C\u041D\u041E\u041F\u0420\u0421\u0422\u0423\u0424\u0425\u0426\u0427\u0428\u0429\u042A\u042B\u042C\u042D\u042E\u042F\u0430\u0431\u0432\u0433\u0434\u0435\u0436\u0437\u0438\u0439\u043A\u043B\u043C\u043D\u043E\u043F\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044A\u044B\u044C\u044D\u044E\u044F';
+var CP1251_REV = (function () {
+  var m = {};
+  for (var i = 0; i < CP1251_HIGH.length; i++) m[CP1251_HIGH.charAt(i)] = 0x80 + i;
+  return m;
+})();
+
+/* Декодирование байтов CP1251 в строку (порциями, чтобы не переполнить стек). */
+function decodeCP1251(u8) {
+  var out = [], CHUNK = 4096;
+  for (var i = 0; i < u8.length; i += CHUNK) {
+    var lim = Math.min(i + CHUNK, u8.length);
+    var part = new Array(lim - i);
+    for (var j = i; j < lim; j++)
+      part[j - i] = u8[j] < 0x80 ? u8[j] : CP1251_HIGH.charCodeAt(u8[j] - 0x80);
+    out.push(String.fromCharCode.apply(null, part));
+  }
+  return out.join('');
+}
+
+/* Кодирование строки в байты CP1251. Непредставимые символы заменяются
+   на «?», их количество возвращается в replaced. */
+function encodeCP1251(text) {
+  text = String(text);
+  var out = new Uint8Array(text.length), replaced = 0;
+  for (var i = 0; i < text.length; i++) {
+    var c = text.charAt(i), code = text.charCodeAt(i);
+    if (code < 0x80) out[i] = code;
+    else if (Object.prototype.hasOwnProperty.call(CP1251_REV, c)) out[i] = CP1251_REV[c];
+    else { out[i] = 0x3F; replaced++; }
+  }
+  return { bytes: out, replaced: replaced };
+}
+
+/* Приведение окончаний строк к Windows (CRLF) - внутренний канон редактора. */
+function toCrlf(s) { return String(s).replace(/\r\n?|\n/g, '\r\n'); }
+
+/* Чтение буфера файла прошивки: UTF-8 (строго; для старых файлов редактора)
+   либо CP1251 (рабочий формат компилятора). UTF-8 BOM отбрасывается. */
+function decodeSrcBuffer(buf) {
+  var u8 = new Uint8Array(buf);
+  var bom = u8.length >= 3 && u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF;
+  if (bom) u8 = u8.subarray(3);
+  var hasHigh = false;
+  for (var i = 0; i < u8.length; i++) if (u8[i] >= 0x80) { hasHigh = true; break; }
+  var text = null, enc = hasHigh ? 'cp1251' : 'ascii';
+  if (hasHigh && typeof TextDecoder !== 'undefined') {
+    try { text = new TextDecoder('utf-8', { fatal: true }).decode(u8); enc = 'utf-8'; }
+    catch (e) { text = null; }
+  }
+  if (text == null) text = decodeCP1251(u8);
+  return { text: toCrlf(text), enc: enc, bom: bom };
 }
 
 /* ---------- разбор текста исходника ---------- */
@@ -1280,7 +1443,7 @@ function generateTableText(slots, eol) {
   for (var i = 0; i <= last; i++) {
     var s = slots[i];
     var nm = (s && s.name && s.name.trim());
-    out.push('; ' + (nm || ('\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430 ' + i)) +
+    out.push('; ' + (nm || ('\u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0430 ' + (i + 1))) +
       ((s && s.steps.length) ? '' : ' - \u043f\u0443\u0441\u0442\u0430\u044f'));
     out.push('');
     if (s) {
@@ -1307,12 +1470,23 @@ function generateTableText(slots, eol) {
 }
 
 /* ---------- сборка полного исходника ---------- */
+
+/* Число пустых строк между последней строкой таблицы и директивой end
+   в базовом файле - воспроизводим его при сборке. */
+function blankTailBefore(lines, endIdx) {
+  var n = 0;
+  for (var i = endIdx - 1; i >= 0 && lines[i].trim() === ''; i--) n++;
+  return n;
+}
+
 function buildSource(baseText, slots) {
   var sp = splitSrc(baseText);
   var reg = locateRegion(sp.lines);
   var table = generateTableText(slots, sp.eol);
+  var tail = '';
+  for (var k = 0; k < blankTailBefore(sp.lines, reg.endIdx) + 1; k++) tail += sp.eol;
   return sp.lines.slice(0, reg.jmpIdx + 1).join(sp.eol) +
-    sp.eol + sp.eol + table + sp.eol + sp.eol +
+    sp.eol + sp.eol + table + tail +
     sp.lines.slice(reg.endIdx).join(sp.eol);
 }
 
@@ -1321,10 +1495,12 @@ function buildSource(baseText, slots) {
    СОСТОЯНИЕ И ИНТЕРФЕЙС
    ============================================================ */
 
-var ORIGINAL = document.getElementById('orig-src').textContent.replace(/^\r?\n/, '');
+/* Встроенный исходник XMAS.SRC хранится внутри HTML: препроцессор
+   браузера нормализует CRLF -> LF, поэтому приводим текст обратно к CRLF. */
+var ORIGINAL = toCrlf(document.getElementById('orig-src').textContent.replace(/^\r?\n/, ''));
 var ORIGINAL_LINES = splitSrc(ORIGINAL).lines;
 var LS_KEY = 'xmas-editor-v1';
-var baseSource = ORIGINAL, baseName = 'XMAS.SRC';
+var baseSource = ORIGINAL, baseName = BASE_FILE;
 var parsedRef = { palettes: null, speeds: null };
 var state = { slots: new Array(MAX_PROGS).fill(null), selected: 0 };
 
@@ -1358,8 +1534,8 @@ function boot() {
       typeof saved.baseSource === 'string' && saved.baseSource) {
     try {
       var res = fullParse(saved.baseSource);
-      baseSource = saved.baseSource;
-      baseName = saved.baseName || 'XMAS.SRC';
+      baseSource = toCrlf(saved.baseSource);
+      baseName = saved.baseName || BASE_FILE;
       parsedRef.palettes = res.palettes; parsedRef.speeds = res.speeds;
       state.slots = saved.slots.map(function (s) {
         return (s && Array.isArray(s.steps)) ? { name: String(s.name || ''), steps: s.steps.map(normalizeStep) } : null;
@@ -1372,11 +1548,13 @@ function boot() {
   ensureSelection();
 }
 function resetToOriginal(ask) {
-  if (ask !== false && !confirm('Вернуть исходные 5 программ из XMAS.SRC? Текущие изменения будут потеряны.')) return false;
-  var res = fullParse(ORIGINAL);
-  baseSource = ORIGINAL; baseName = 'XMAS.SRC';
-  parsedRef.palettes = res.palettes; parsedRef.speeds = res.speeds;
-  state.slots = res.slots; state.selected = 0;
+  var res0 = fullParse(ORIGINAL);
+  var n0 = 0;
+  for (var k = 0; k < MAX_PROGS; k++) if (res0.slots[k]) n0++;
+  if (ask !== false && !confirm('Вернуть исходные ' + n0 + ' программ из ' + BASE_FILE + '? Текущие изменения будут потеряны.')) return false;
+  baseSource = ORIGINAL; baseName = BASE_FILE;
+  parsedRef.palettes = res0.palettes; parsedRef.speeds = res0.speeds;
+  state.slots = res0.slots; state.selected = 0;
   ensureSelection();
   if (player.playing) stopPlay();
   return true;
@@ -1409,7 +1587,7 @@ function renderBudget() {
   dl.title = b.total > MAX_TABLE
     ? 'Таблица программ больше ' + MAX_TABLE + ' байт - удалите лишние шаги'
     : 'Скачать полный код прошивки с вашими программами';
-  dl.innerHTML = '<span class="ic">' + IC.dl + '</span>Скачать ' + esc(baseName || 'XMAS.SRC');
+  dl.innerHTML = '<span class="ic">' + IC.dl + '</span>Скачать ' + esc(baseName || BASE_FILE);
 }
 
 function renderProgramList() {
@@ -1504,9 +1682,9 @@ function speedHint(c) {
 function rampOptions(cur, speedCode) {
   var base = spds()[16].bright[speedCode] || 1;
   var items = [
-    [0, 'Плавно \u2248' + fmtDur(Math.ceil(240 / base) * 10)],
-    [1, 'Быстрее \u00d72 \u2248' + fmtDur(Math.ceil(240 / (base * 2)) * 10)],
-    [2, 'Быстро \u00d74 \u2248' + fmtDur(Math.ceil(240 / (base * 4)) * 10)],
+    [0, 'Плавно \u2248' + fmtDur(Math.ceil(BRIGHT_MAX / base) * 10)],
+    [1, 'Быстрее \u00d72 \u2248' + fmtDur(Math.ceil(BRIGHT_MAX / (base * 2)) * 10)],
+    [2, 'Быстро \u00d74 \u2248' + fmtDur(Math.ceil(BRIGHT_MAX / (base * 4)) * 10)],
     [3, 'Мгновенно']
   ];
   return items.map(function (it) {
@@ -1700,22 +1878,27 @@ function wire() {
   });
   $('#chkThree').addEventListener('change', function () { player.three = this.checked; });
   $('#chkDemo').addEventListener('change', function () { player.demo = this.checked; });
+  $('#chkSeq').addEventListener('change', function () { player.seq = this.checked; });
 }
 
 
 /* ============================================================
-   ПЛЕЕР: симуляция интерпретатора прошивки.
+   ПЛЕЕР: симуляция интерпретатора прошивки XMAS.
    Прошивка (метки Run/MakeStep/Bright) каждые 10 мс (полупериод
    сети) прибавляет/вычитает яркость каналов к цели из текущего
-   кадра, а по исчерпании StepTime переходит к следующему кадру
-   палитры, затем к следующему элементу программы.
+   кадра (диапазон 000h..0F8h = 248), а по исчерпании StepTime
+   переходит к следующему кадру палитры, затем к следующему элементу
+   программы. В режиме _Seq (галочка «Последовательно»): в начале
+   такта вычисляются флажки _Hold (какой-то выключаемый канал еще
+   светит - включаемые не разгораются) и _Done (все переходы
+   завершены); незавершенный шаг продлевается по два такта.
    ============================================================ */
 
 var player = {
-  playing: false, demo: false, gSpeed: 16, three: false,
+  playing: false, demo: false, gSpeed: 16, three: false, seq: false,
   prog: 0, elem: 0, framePos: 0, repeatLeft: 1, timer: 1, stepTime: 1,
-  pat: 0, speedUp: 1, speedDown: 1, bright: [0, 0, 0, 0], seq: [],
-  raf: 0, lastT: 0, acc: 0, jumps: 0
+  pat: 0, speedUp: 1, speedDown: 1, bright: [0, 0, 0, 0], seq_: [],
+  hold: false, done: true, raf: 0, lastT: 0, acc: 0, jumps: 0
 };
 var bulbs = [];
 
@@ -1730,7 +1913,7 @@ function buildLamps() {
 }
 function renderLamps() {
   for (var ch = 0; ch < 4; ch++) {
-    var b = clamp(player.bright[ch] / 240, 0, 1);
+    var b = clamp(player.bright[ch] / BRIGHT_MAX, 0, 1);
     bulbs[ch].style.opacity = (0.16 + 0.84 * b).toFixed(3);
     bulbs[ch].style.boxShadow = b > 0.01
       ? '0 0 ' + (5 + 30 * b).toFixed(0) + 'px ' + (1 + 8 * b).toFixed(0) + 'px ' + hexA(CH_COLORS[ch], (0.08 + 0.5 * b).toFixed(2))
@@ -1750,8 +1933,8 @@ function loadElement() {
   var sp = spds()[player.gSpeed] || spds()[16];
   player.stepTime = Math.max(1, sp.exec[st.speed] | 0);
   var bb = sp.bright[st.speed] | 0;
-  player.speedUp = st.up === 3 ? 240 : bb * (st.up === 1 ? 2 : st.up === 2 ? 4 : 1);
-  player.speedDown = st.down === 3 ? 240 : bb * (st.down === 1 ? 2 : st.down === 2 ? 4 : 1);
+  player.speedUp = st.up === 3 ? BRIGHT_MAX : bb * (st.up === 1 ? 2 : st.up === 2 ? 4 : 1);
+  player.speedDown = st.down === 3 ? BRIGHT_MAX : bb * (st.down === 1 ? 2 : st.down === 2 ? 4 : 1);
   var frames;
   if (st.mode === 'dir') {
     frames = [st.dirNoRev ? 0 : st.pattern];
@@ -1759,7 +1942,7 @@ function loadElement() {
     frames = pals()[st.pal].frames.slice();
     if (st.reverse) frames.reverse();
   }
-  player.seq = frames.map(function (v) { return { pat: v & 0x0F, skip: !!(v & 0x80) }; });
+  player.seq_ = frames.map(function (v) { return { pat: v & 0x0F, skip: !!(v & 0x80) }; });
   player.repeatLeft = (st.mode === 'pal') ? st.repeat : 1;
   player.framePos = -1;
   advanceFrame();
@@ -1767,7 +1950,7 @@ function loadElement() {
 
 function advanceFrame() {
   if (++player.jumps > 500) { stopPlay(); pv('Слишком много пустых переходов - останов'); return; }
-  var s = player.seq;
+  var s = player.seq_;
   if (!s.length || s.every(function (f) { return player.three && f.skip; })) { nextElement(); return; }
   for (;;) {
     player.framePos++;
@@ -1803,11 +1986,36 @@ function nextProgram() {
 }
 
 function tick() {
-  for (var ch = 0; ch < 4; ch++) {
-    if (player.pat & (1 << ch)) player.bright[ch] = Math.min(240, player.bright[ch] + player.speedUp);
-    else player.bright[ch] = Math.max(0, player.bright[ch] - player.speedDown);
+  /* Последовательный режим (_Seq): как в прошивке, флажки _Hold/_Done
+     вычисляются в начале такта по битам кадра и текущим уровням. */
+  var hold = false, done = true;
+  if (player.seq) {
+    for (var c = 0; c < 4; c++) {
+      if (player.pat & (1 << c)) {
+        if ((player.bright[c] & 0xF8) !== BRIGHT_MAX) done = false; /* макс: (Ch & 0F8h) == 0F8h */
+      } else if (player.bright[c] > 0) {
+        hold = true; done = false;                    /* еще светит - задержим */
+      }
+    }
   }
-  if (--player.timer <= 0) advanceFrame();
+  player.hold = hold; player.done = done;
+  for (var ch = 0; ch < 4; ch++) {
+    if (player.pat & (1 << ch)) {
+      if (!hold) {
+        /* Как в прошивке: кламп только по переносу - значения 0F9h..0FFh
+           живут до следующего переполнения (дрейф-полоса максимума). */
+        var v = player.bright[ch] + player.speedUp;
+        player.bright[ch] = v > 255 ? BRIGHT_MAX : v;
+      }
+    } else {
+      var d = player.bright[ch] - player.speedDown;
+      player.bright[ch] = d < 0 ? 0 : d;
+    }
+  }
+  if (--player.timer <= 0) {
+    if (player.seq && !done) player.timer = 2; /* продление шага на два такта */
+    else advanceFrame();
+  }
 }
 
 function loop(t) {
@@ -1837,14 +2045,15 @@ function renderPlayerFrame() {
       var pl = pals()[st.pal];
       bits = 'палитра #' + st.pal.toString(16).toUpperCase() +
         (pl.name ? ' «' + esc(pl.name) + '»' : '') +
-        ' · кадр ' + (player.framePos + 1) + '/' + player.seq.length +
+        ' · кадр ' + (player.framePos + 1) + '/' + player.seq_.length +
         ' · повтор ' + (st.repeat - player.repeatLeft + 1) + '/' + st.repeat;
     } else {
       bits = 'каналы напрямую · код ' + player.pat;
     }
   }
   pv('<b>Программа #' + player.prog + '</b>' + (p && p.name ? ' · ' + esc(p.name) : '') +
-    ' · шаг <b>' + (player.elem + 1) + '/' + (p ? p.steps.length : '?') + '</b> · ' + bits);
+    ' · шаг <b>' + (player.elem + 1) + '/' + (p ? p.steps.length : '?') + '</b> · ' + bits +
+    (player.seq ? ' · <b>последовательный режим</b>' : ''));
   markStep(player.elem);
 }
 function markStep(idx) {
@@ -1879,6 +2088,7 @@ function startPlay() {
   player.playing = true;
   player.demo = $('#chkDemo').checked;
   player.three = $('#chkThree').checked;
+  player.seq = $('#chkSeq').checked;
   player.prog = state.selected;
   player.elem = 0;
   player.bright = [0, 0, 0, 0];
@@ -1906,23 +2116,30 @@ function restartPlay() {
 }
 
 /* ============================================================
-   ИМПОРТ / СКАЧИВАНИЕ
+   ИМПОРТ / СКАЧИВАНИЕ (файлы прошивки: CP1251 + CRLF)
    ============================================================ */
+function encLabel(enc) {
+  return enc === 'utf-8' ? 'UTF-8' : enc === 'ascii' ? 'ASCII (совместим с CP1251)' : 'CP1251';
+}
+
 function onImportFile(e) {
   var f = e.target.files && e.target.files[0];
   if (!f) return;
   var rd = new FileReader();
   rd.onload = function () {
     try {
-      var res = fullParse(rd.result);
-      baseSource = rd.result;
-      baseName = f.name || 'XMAS.SRC';
+      var dec = decodeSrcBuffer(rd.result);
+      var text = dec.text;
+      var res = fullParse(text);
+      baseSource = text;
+      baseName = f.name || BASE_FILE;
       parsedRef.palettes = res.palettes; parsedRef.speeds = res.speeds;
       state.slots = res.slots;
       if (player.playing) stopPlay();
       ensureSelection(); renderAll();
       var n = lastOccupied() + 1;
-      pv('Загружено из «' + esc(baseName) + '»: ' + n + ' программ' + plural(n, 'а', 'ы', '') +
+      pv('Загружено из «' + esc(baseName) + '» (' + encLabel(dec.enc) +
+        (dec.bom ? ', BOM отброшен' : '') + '): ' + n + ' программ' + plural(n, 'а', 'ы', '') +
         ', таблица ' + bytesOf(state.slots).total + ' байт');
     } catch (err) {
       alert('Не удалось разобрать файл: ' + err.message);
@@ -1930,7 +2147,7 @@ function onImportFile(e) {
     e.target.value = '';
   };
   rd.onerror = function () { alert('Не удалось прочитать файл'); e.target.value = ''; };
-  rd.readAsText(f, 'utf-8');
+  rd.readAsArrayBuffer(f);
 }
 
 function doDownload() {
@@ -1940,17 +2157,20 @@ function doDownload() {
       '. Удалите лишние шаги (каждый шаг - 2 байта).');
     return;
   }
-  var text = buildSource(baseSource, state.slots);
-  var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  var text = toCrlf(buildSource(baseSource, state.slots));
+  var enc = encodeCP1251(text);
+  var blob = new Blob([enc.bytes], { type: 'application/octet-stream' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = baseName || 'XMAS.SRC';
+  a.download = baseName || BASE_FILE;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
-  pv('Файл «' + esc(a.download) + '» сформирован: таблица программ - ' + b.total + ' байт из ' + MAX_TABLE);
+  pv('Файл «' + esc(a.download) + '» сформирован: CP1251, окончания строк Windows (CRLF)' +
+    ', таблица программ - ' + b.total + ' байт из ' + MAX_TABLE +
+    (enc.replaced ? '. ВНИМАНИЕ: ' + enc.replaced + ' символ(ов) нет в CP1251 - заменены на «?»' : ''));
 }
 
 /* ============================================================
@@ -1970,28 +2190,58 @@ window.__debug = {
   state: function () { return JSON.parse(JSON.stringify({ slots: state.slots, selected: state.selected })); },
   totalBytes: function () { return bytesOf(state.slots).total; },
   generate: function () { return buildSource(baseSource, state.slots); },
+  generateBytes: function () {
+    var enc = encodeCP1251(toCrlf(buildSource(baseSource, state.slots)));
+    var s = '';
+    for (var i = 0; i < enc.bytes.length; i++) s += String.fromCharCode(enc.bytes[i]);
+    return btoa(s);
+  },
+  original: function () { return ORIGINAL; },
   parse: function (t) { return fullParse(t); },
   palettes: function () { return pals(); },
   speeds: function () { return spds(); },
   baseName: function () { return baseName; },
+  decodeBuffer: function (b64) {
+    var s = atob(b64), u8 = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+    return decodeSrcBuffer(u8.buffer);
+  },
+  encodeCP1251: function (t) {
+    var r = encodeCP1251(t), s = '';
+    for (var i = 0; i < r.bytes.length; i++) s += String.fromCharCode(r.bytes[i]);
+    return { b64: btoa(s), replaced: r.replaced };
+  },
   player: player,
   sim: function (n, opts) {
     opts = opts || {};
     player.gSpeed = opts.gSpeed != null ? opts.gSpeed : 16;
     player.three = !!opts.three;
     player.demo = !!opts.demo;
+    player.seq = !!opts.seq;
     player.prog = opts.prog != null ? opts.prog : Math.max(0, state.selected);
     player.elem = 0; player.bright = [0, 0, 0, 0]; player.jumps = 0;
     player.playing = true;
+    var trace = opts.trace ? [] : null;
     try {
       loadElement();
-      for (var i = 0; i < n && player.playing; i++) tick();
+      for (var i = 0; i < n && player.playing; i++) {
+        /* метки кадра - ДО такта (как снимок прошивки: такт принадлежит тому кадру,
+           чья рампа в нём выполнялась; смена кадра происходит после истечения Timer) */
+        var pre = { prog: player.prog, elem: player.elem, frame: player.framePos, pat: player.pat };
+        tick();
+        if (trace) trace.push({
+          t: i, prog: pre.prog, elem: pre.elem, frame: pre.frame,
+          pat: pre.pat, timer: player.timer, hold: player.hold, done: player.done,
+          bright: player.bright.slice()
+        });
+      }
       var wasPlaying = player.playing;
       player.playing = false;
       return {
         ok: true, wasPlaying: wasPlaying, prog: player.prog, elem: player.elem,
         framePos: player.framePos, pat: player.pat, bright: player.bright.slice(),
-        min: Math.min.apply(null, player.bright), max: Math.max.apply(null, player.bright)
+        min: Math.min.apply(null, player.bright), max: Math.max.apply(null, player.bright),
+        trace: trace
       };
     } catch (err) {
       player.playing = false;
